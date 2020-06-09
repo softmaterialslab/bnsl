@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/bin/invoke_app "$@" -C "start_jupyter -t -A -T @tool bin/npassemblylab.ipynb" -t npassemblylab -u anaconda3-5.1
