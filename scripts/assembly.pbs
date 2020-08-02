@@ -1,0 +1,16 @@
+#!	/bin/bash
+#SBATCH--mail-user=nbrunk@iu.edu
+#SBATCH--nodes=1
+#SBATCH--ntasks-per-node=48
+#SBATCH--time=168:00:00
+#SBATCH--partition=general
+#SBATCH--mail-type=FAIL,BEGIN,END
+#SBATCH--job-name=Slow_Dia_E2-K2_1:1
+#SBATCH--output=out.log
+#SBATCH--error=err.log
+
+module swap PrgEnv-intel/6.0.6 PrgEnv-gnu/6.0.6
+module load lammps
+
+cd	$SLURM_SUBMIT_DIR
+srun -n	48	lmp_mpi < assembly_E2-K2_cS=75mM.script
