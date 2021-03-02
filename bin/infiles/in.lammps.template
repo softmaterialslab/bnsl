@@ -17,8 +17,9 @@ group dend type	2
 mass	1	1
 mass	2	0.0029024	# relative mass of dendrimer to P22
 dielectric	78.54
-set	type	1	charge	USERINPUT_NP_CHARGE	# qV_DLVO (in LJ units)
-set	type	2	charge	DEVINPUT_LIGAND_CHARGE	# qD_DLVO (in LJ units)
+set	type	1	charge	DEVINPUT_VLP1_CHARGE	# qV1_DLVO (in LJ units)
+set	type	2	charge	DEVINPUT_VLP2_CHARGE	# qV2_DLVO (in LJ units)
+set	type	3	charge	DEVINPUT_LIGAND_CHARGE	# qD_DLVO (in LJ units)
 
 ## Ascribing Initial Velocities ##
 velocity	all	create	1.	4928459	rot	yes	dist	gaussian	units	box	# 1-kB*T,random seed,zero net ang.mom.,gauss from MB stats

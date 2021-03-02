@@ -23,9 +23,11 @@ int main(int argc, const char *argv[]) {
     string saltText = "USERINPUTSALT";
     string dataSetCountText = "USERINPUT_DATASETCOUNT";
     string ligandNumFileNameText = "USERINPUT_LIGAND_FILENAME";
-
     string mpiText = "NODESIZE";
 
+    // Added for bnsl
+    string vlp1ChargeText = "DEVINPUT_VLP1_CHARGE";
+    string vlp2ChargeText = "DEVINPUT_VLP2_CHARGE";
 
     const double pi = 3.141593;
     // big for NP, small for ligand
@@ -78,6 +80,10 @@ int main(int argc, const char *argv[]) {
     //double userInputSalt = 3.2879795708993616*1e9/sqrt(1/c);
     userInputSalt = userInputSalt * 56 * 1e-9;
 
+    // Added for bnsl
+    double devInputVlp1Charge = 0;
+    double devInputVlp2Charge = 0;
+
     std::string initcoords = "initCoords_" + std::to_string(n);
     initcoords = initcoords + "x.assembly";
 
@@ -93,9 +99,17 @@ int main(int argc, const char *argv[]) {
                 if (found != std::string::npos)
                     line.replace(found, ligandNumText.length(),  std::to_string(n));
 
-                found = line.find(npChargeText);
+//                found = line.find(npChargeText);
+//                if (found != std::string::npos)
+//                    line.replace(found, npChargeText.length(), std::to_string(userInputNpCharge));
+
+                // Added for bnsl
+                found = line.find(vlp1ChargeText);
                 if (found != std::string::npos)
-                    line.replace(found, npChargeText.length(), std::to_string(userInputNpCharge));
+                    line.replace(found, vlp1ChargeText.length(), std::to_string(devInputVlp1Charge));
+                found = line.find(vlp2ChargeText);
+                if (found != std::string::npos)
+                    line.replace(found, vlp2ChargeText.length(), std::to_string(devInputVlp2Charge));
 
                 found = line.find(ligandChargeText);
                 if (found != std::string::npos)
