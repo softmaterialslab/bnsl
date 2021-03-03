@@ -7,46 +7,47 @@ neighbor	0.3	bin
 neigh_modify	every	1	delay	0	check	yes
 
 ## Create Simulation Box, Atoms ##
-read_data	infiles/initCoords.assembly
+read_data	infiles/initCoords_Nv=100_cD=100x_1-1.assembly
 
 ## Group Atoms by Type ##
 group virus1 type	1
 group virus2 type	2
 group dend type	3
-group allViruses id 1:540
+group allViruses id 1:100
 
 ## Defining Particle/Medium Properties ##
 mass	1	1
 mass	2	1
 mass	3	0.0029024	# relative mass of dendrimer to P22
 dielectric	78.54
-set	type	1	charge	0.000000	# qV1_DLVO (in LJ units)
-set	type	2	charge	0.000000	# qV2_DLVO (in LJ units)
-set	type	3	charge	473.773353	# qD_DLVO (in LJ units)
+set	type	1	charge	-5099956469103.125000	# qV1_DLVO (in LJ units)
+set	type	2	charge	4349755538075302912.000000	# qV2_DLVO (in LJ units)
+set	type	3	charge	228.930908	# qD_DLVO (in LJ units)
 
 ## Ascribing Initial Velocities ##
 velocity	all	create	1.	4928459	rot	yes	dist	gaussian	units	box	# 1-kB*T,random seed,zero net ang.mom.,gauss from MB stats
 
 ## Ascribing interparticle potentials: ##
-pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	71.312029	1.1502185158251248	# LJ_cut without delta, kappa, Global ES_cut
-pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
-pair_coeff	1	1	coul/debye	1.1502185158251248	# V1-V1 ES_cut
-pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
-pair_coeff	2	2	coul/debye	1.1105558083828793	# V2-V2 ES_cut
-pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
-pair_coeff	1	2	coul/debye	1.130387162104002	# V1-V2 ES_cut
-pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
-pair_coeff	1	3	coul/debye	0.6940973802392995	# V-D ES_cut
-pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
-pair_coeff	2	3	coul/debye	0.6940973802392995	# V-D ES_cut
-pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
-pair_coeff	3	3	coul/debye	0.2379762446534741	# D-D ES_cut
-pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+pair_style hybrid/overlay lj/expand 0.09019784316771746 coul/debye 50.425219 1.5206911690492193 # LJ_cut without delta, kappa, Global ES_cut
+pair_coeff 	1 1 lj/expand 1 1. 0 						# epsilon, sigma_hc, delta_V1-V1
+pair_coeff 	1 1 coul/debye 1.5206911690492193 				# V1-V1 ES_cut
+pair_coeff 	2 2 lj/expand 1 1. 0 						# epsilon, sigma_hc, delta_V2-V2
+pair_coeff 	2 2 coul/debye 1.4120703712599896 				# V2-V2 ES_cut
+pair_coeff 	1 2 lj/expand 1 1. 0 						# epsilon, sigma_hc, delta_V1-V2
+pair_coeff 	1 2 coul/debye 1.4663807701546046 				# V1-V2 ES_cut
+pair_coeff 	1 3 lj/expand 1 0.08035714285714285 0.47946428571428573 	# epsilon, sigma_hc, delta_V1-D
+pair_coeff 	1 3 coul/debye 0.9775871801030697 				# V-D ES_cut
+pair_coeff 	2 3 lj/expand 1 0.08035714285714285 0.47946428571428573 	# epsilon, sigma_hc, delta_V2-D
+pair_coeff 	2 3 coul/debye 0.9775871801030697 				# V-D ES_cut
+pair_coeff 	3 3 lj/expand 1 0.11964285714285713 0. 				# epsilon, sigma_hc, delta_D-D
+pair_coeff 	3 3 coul/debye 0.48879359005153483 				# D-D ES_cut
+pair_modify 	shift yes 							# the additive e_LJ for repulsion-only
 
 ## Ensemble Fixes (+ for output) ##
 variable	myTStep	equal	0.000025
 timestep	${myTStep}
 variable	myDStep	equal	1000 #100000
+
 fix	ens	all	nvt	temp	1.	1.	0.0025	# T_start, T_stop, T_damp=100*timestep
 
 
@@ -63,33 +64,34 @@ compute	myDendPot	dend	reduce	sum	c_dendPotVec
 
 
  ## Initial Image Dump ##
-dump   	myimages all image 10000 outfiles/image.*.jpg type type &
-               	axes no 0.8 0.02 view 60 -30
+dump   		myimages all image 10000 outfiles/image.*.jpg type type axes no 0.8 0.02 view 60 -30
 dump_modify    	myimages pad 3
 dump_modify	myimages boxcolor black backcolor white
-dump_modify myimages adiam 1 1
-dump_modify myimages adiam 2 0.1
+dump_modify 	myimages adiam 1 1
+dump_modify 	myimages adiam 2 0.1
 
-
-## Defining Output Information ##
-dump	posD	all	custom	${myDStep}	outfiles/dump.melt	id	type	x	y	z	# c_atomPot	c_atomKin
-#find out about putting numbers 5000 etc into variables
-dump    allV    allViruses  custom  5000    outfiles/dumpVirusesOnly.melt    id	type	x	y	z	# c_atomPot	c_atomKin
-dump	v1OnlyD	virus1	custom	1000	outfiles/dumpVirus1Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
-dump	v2OnlyD	virus2	custom	1000	outfiles/dumpVirus2Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
 
 print "OUTPUT COLUMNS: SIMULATION STEP NUMBER | TEMPERATURE | NP POTENTIAL ENERGY | SYSTEM VOLUME"
 
-thermo_style	custom	step	temp	c_myVirus1T	c_myVirus2T	c_myDendT	c_myVirus1Pot	c_myVirus2Pot	c_myDendPot	etotal	ke	pe	vol	press
+thermo_style	custom	step temp c_myVirus1T c_myVirus2T c_myDendT c_myVirus1Pot c_myVirus2Pot	c_myDendPot etotal ke pe vol press
 thermo	10000 #2500
 
-restart	1000000	assemblyRestart.*	# creates 10 restart files throughout run
-run	3000000
+restart	500000	assemblyRestart.*	# creates 3 restart files throughout run
+run	1500000
 
-unfix	ens
-undump	posD
-undump	v1OnlyD
-undump	v2OnlyD
+## Defining Output Information ##
+dump    allV    allViruses  custom  ${myDStep}    outfiles/dump.melt    id	type	x	y	z	# c_atomPot	c_atomKin 
+#dump	v1OnlyD	virus1	custom	1000	outfiles/dumpVirus1Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
+#dump	v2OnlyD	virus2	custom	1000	outfiles/dumpVirus2Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
+#dump	posD	all	custom	${myDStep}	outfiles/dump.melt	id	type	x	y	z	# c_atomPot	c_atomKin
+
+restart	500000	assemblyRestart.*	# creates 3 restart files throughout run
+run	1500000
+
+unfix		ens
+undump		posD
+undump		v1OnlyD
+undump		v2OnlyD
 uncompute	myVirus1T
 uncompute	myVirus2T
 uncompute	myDendT

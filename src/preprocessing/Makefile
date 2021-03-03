@@ -1,7 +1,7 @@
 # This is a makefile.
 # Use option -p in CC for profiling with gprof
 
-PROG = postprocessor
+PROG = preprocessor
 BIN = ../../bin/
 bindir = bin
 OBJ = main.o 
