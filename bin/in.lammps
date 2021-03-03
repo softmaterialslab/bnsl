@@ -20,15 +20,15 @@ mass	1	1
 mass	2	1
 mass	3	0.0029024	# relative mass of dendrimer to P22
 dielectric	78.54
-set	type	1	charge	DEVINPUT_VLP1_CHARGE	# qV1_DLVO (in LJ units)
-set	type	2	charge	DEVINPUT_VLP2_CHARGE	# qV2_DLVO (in LJ units)
-set	type	3	charge	DEVINPUT_LIGAND_CHARGE	# qD_DLVO (in LJ units)
+set	type	1	charge	0.000000	# qV1_DLVO (in LJ units)
+set	type	2	charge	0.000000	# qV2_DLVO (in LJ units)
+set	type	3	charge	473.773353	# qD_DLVO (in LJ units)
 
 ## Ascribing Initial Velocities ##
 velocity	all	create	1.	4928459	rot	yes	dist	gaussian	units	box	# 1-kB*T,random seed,zero net ang.mom.,gauss from MB stats
 
 ## Ascribing interparticle potentials: ##
-pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	USERINPUTSALT	1.1502185158251248	# LJ_cut without delta, kappa, Global ES_cut
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	71.312029	1.1502185158251248	# LJ_cut without delta, kappa, Global ES_cut
 pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
 pair_coeff	1	1	coul/debye	1.1502185158251248	# V1-V1 ES_cut
 pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2

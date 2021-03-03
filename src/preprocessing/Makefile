@@ -1,10 +1,10 @@
 # This is a makefile.
 # Use option -p in CC for profiling with gprof
 
-PROG = preprocessor
+PROG = postprocessor
 BIN = ../../bin/
 bindir = bin
-OBJ = main.o
+OBJ = main.o functions.o
 CCF = CC
 
 # nanoHUB flags. 
@@ -18,17 +18,12 @@ BigRed2LFLAG = -lgsl -lgslcblas -lm -lboost_program_options -lboost_filesystem -
 BigRed2CFLAG = -c
 BigRed2OFLAG = -o
 # General purpose flags.
-CC = g++-10 -O3 -g -Wall -std=c++11
-LFLAG = -I ${BOOST_INCDIR} -L${BOOST_LIBDIR} -lm -lboost_program_options -lboost_filesystem -lboost_system
+CC = g++ -O3 -g -Wall -std=c++11
+LFLAG = -lm -L${BOOST_LIBDIR} -lboost_program_options -lboost_filesystem -lboost_system
 CFLAG = -c
 OFLAG = -o
 
-#local:
-#	g++-10 -O3 -L/usr/local/Cellar/boost/1.74.0/lib/ -I/usr/local/Cellar/boost/1.74.0/include -g -Wall -std=c++11 -c -c main.cpp -o main.o
-#	cp -f $(PROG) $(BIN)
 all: $(PROG)
-
-
 
 install: all
 	@echo "Installing $(PROG) into $(bindir) directory"; cp -f $(PROG) $(BIN)
@@ -42,22 +37,19 @@ cluster-install:
 	@echo "Installing $(PROG) into $(bindir) directory on the computing cluster"; cp -f $(PROG) $(BIN)
 
 $(PROG) : $(OBJ)
-ifeq ($(CCF),BigRed2)
-	echo "bigred"
+ifeq ($(CCF),BigRed2)	
 	$(BigRed2CC) $(BigRed2OFLAG) $(PROG) $(OBJ) $(BigRed2LFLAG)
 %.o : %.cpp
 	$(BigRed2CC) -c $(BigRed2CFLAG) $< -o $@
 else ifeq ($(CCF),nanoHUB)
-	echo "nano"
 	$(nanoHUBCC) $(nanoHUBOFLAG) $(PROG) $(OBJ) $(nanoHUBLFLAG)
 %.o : %.cpp
 	$(nanoHUBCC) -c $(nanoHUBCFLAG) $< -o $@
 else
-	echo "I am here"
-	$(CC) $(OFLAG) $(PROG)  $(LFLAG) $(OBJ)
+	$(CC) $(OFLAG) $(PROG) $(OBJ) $(LFLAG)
 %.o : %.cpp
-	echo "nope I am here"
-	$(CC) $(CFLAG) $(LFLAG) $< -o $@
+	$(CC) -c $(CFLAG) $< -o $@	
 endif
 
 .PHONY: all install nanoHUB-install cluster-install
+

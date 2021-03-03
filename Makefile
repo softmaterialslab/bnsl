@@ -19,11 +19,6 @@ d=6.7
 i=0 
 N=150
 NODESIZE=4
-#CC=g++-10
-
-#local:
-#	g++-10 -O3 -g -Wall -std=c++11 -o preprocessor main.o -lm -L/usr/local/Cellar/boost/1.74.0/lib/ -I/usr/local/Cellar/boost/1.74.0/include -lboost_program_options -lboost_filesystem -lboost_system
-	#g++-10 -O3 -L/usr/local/Cellar/boost/1.74.0/lib/ -I/usr/local/Cellar/boost/1.74.0/include -g -Wall -std=c++11 -c -c main.cpp -o main.o
 
 all:
 	@echo "Starting build of the project";
@@ -91,3 +86,4 @@ dataclean:
 	rm -f $(BIN)/*.pbs
 
 .PHONY: all clean
+
