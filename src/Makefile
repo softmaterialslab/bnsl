@@ -24,7 +24,6 @@ all:
 	@echo "Starting build of the project";
 ifeq ($(CCF),BigRed2)	
 	+$(MAKE) -C $(PRE) cluster-install
-	+$(MAKE) -C $(POST) cluster-install
 else ifeq ($(CCF),nanoHUB)
 	+$(MAKE) -C $(PRE) nanoHUB-install
 	+$(MAKE) -C $(POST) nanoHUB-install
