@@ -11,7 +11,7 @@ CCF = CC
 
 # nanoHUB flags. 
 nanoHUBCC = g++ -O3 -g -Wall -std=c++11
-nanoHUBLFLAG = -lm -L${BOOST_LIBDIR} -lboost_program_options -lboost_filesystem -lboost_system
+nanoHUBLFLAG = -lgsl -lgslcblas -lm -L${BOOST_LIBDIR} -lboost_program_options -lboost_filesystem -lboost_system
 nanoHUBCFLAG = -I${BOOST_INCDIR}
 nanoHUBOFLAG = -o
 # BigRed2 flags. 
