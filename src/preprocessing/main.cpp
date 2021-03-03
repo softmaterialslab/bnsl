@@ -47,8 +47,8 @@ int main(int argc, const char *argv[]) {
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
             ("help,h", "print usage message")
-            ("Qnp,E", value<int>(&Q_vlp1)->default_value(-1500), "Q_E2 in e")
-            ("Qnp,K", value<int>(&Q_vlp2)->default_value(-600), "Q_K2 in e")
+            ("Qvlp1,E", value<int>(&Q_vlp1)->default_value(-1500), "Q_E2 in e")
+            ("Qvlp2,K", value<int>(&Q_vlp2)->default_value(-600), "Q_K2 in e")
             ("NLigand,n", value<int>(&n)->default_value(100))
             ("Salt,c", value<double>(&c)->default_value(0.150), "c in Molars")
             ("qnp,q", value<int>(&q)->default_value(45), "q in e")
@@ -74,10 +74,10 @@ int main(int argc, const char *argv[]) {
 
     double devInputQvlp1Charge = Q_vlp1 * (exp((1.64399 * 56) / sqrt(1 / c)) / (1 + ((1.64399 * 56) / sqrt(1 / c))));
     devInputQvlp1Charge = devInputQvlp1Charge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
-
+    cout<<"\n line 77 Q_vlp2:"<<Q_vlp2<<"\n";
     double devInputQvlp2Charge = Q_vlp2 * (exp((1.64399 * 56) / sqrt(1 / c)) / (1 + ((1.64399 * 56) / sqrt(1 / c))));
     devInputQvlp2Charge = devInputQvlp2Charge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
-
+    cout<<"\n line 80 devInputQvlp2Charge:"<<devInputQvlp2Charge<<"\n";
     double devInputLigandCharge = q * (exp((1.64399 * 6.7) / sqrt(1 / c)) / (1 + ((1.64399 * 6.7) / sqrt(1 / c))));
     devInputLigandCharge = devInputLigandCharge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
 

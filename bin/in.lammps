@@ -21,7 +21,7 @@ mass	2	1
 mass	3	0.0029024	# relative mass of dendrimer to P22
 dielectric	78.54
 set	type	1	charge	-5099956469103.125000	# qV1_DLVO (in LJ units)
-set	type	2	charge	4349755538075302912.000000	# qV2_DLVO (in LJ units)
+set	type	2	charge	-2039982587641.250000	# qV2_DLVO (in LJ units)
 set	type	3	charge	228.930908	# qD_DLVO (in LJ units)
 
 ## Ascribing Initial Velocities ##
