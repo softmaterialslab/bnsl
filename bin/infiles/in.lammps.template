@@ -7,13 +7,13 @@ neighbor	0.3	bin
 neigh_modify	every	1	delay	0	check	yes
 
 ## Create Simulation Box, Atoms ##
-read_data	infiles/initCoords.assembly
+read_data	infiles/initCoords_Nv=100_cD=100x_1-1.assembly
 
 ## Group Atoms by Type ##
 group virus1 type	1
 group virus2 type	2
 group dend type	3
-group allViruses id 1:540
+group allViruses id 1:100
 
 ## Defining Particle/Medium Properties ##
 mass	1	1
