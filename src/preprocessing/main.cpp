@@ -84,7 +84,7 @@ int main(int argc, const char *argv[]) {
     double userInputSalt = 1 / (1e3 * sqrt(1 / (2 * 4 * pi * 0.714295 * (6.022 * 1e23) * c)));
     //double userInputSalt = 3.2879795708993616*1e9/sqrt(1/c);
     userInputSalt = userInputSalt * 56 * 1e-9;
-
+    cout<<"\n I am here"<<userInputSalt;
     std::string initcoords = "initCoords_" + std::to_string(n);
     initcoords = initcoords + "x.assembly";
 
