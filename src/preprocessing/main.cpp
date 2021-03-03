@@ -77,7 +77,7 @@ int main(int argc, const char *argv[]) {
     cout<<"\n line 77 Q_vlp2:"<<Q_vlp2<<"\n";
     double devInputQvlp2Charge = Q_vlp2 * (exp((1.64399 * 56) / sqrt(1 / c)) / (1 + ((1.64399 * 56) / sqrt(1 / c))));
     devInputQvlp2Charge = devInputQvlp2Charge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
-    cout<<"\n line 80 devInputQvlp2Charge:"<<devInputQvlp2Charge<<"\n";
+    cout<<"\n line 80 devInputQvlp2Charge:"<<devInputQvlp2Charge<<"\n";   
     double devInputLigandCharge = q * (exp((1.64399 * 6.7) / sqrt(1 / c)) / (1 + ((1.64399 * 6.7) / sqrt(1 / c))));
     devInputLigandCharge = devInputLigandCharge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
 
