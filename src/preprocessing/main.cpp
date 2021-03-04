@@ -94,7 +94,7 @@ int main(int argc, const char *argv[]) {
     else if(e2k2ratio == 4)
         initcoords = initcoords+"x_1-4";
     initcoords = initcoords + ".assembly";
-    cout<<"\n ===>"<<initcoords;
+    //cout<<"\n ===>"<<initcoords;
     ofstream inputScript("in.lammps", ios::trunc);
     if (inputScript.is_open()) {
 
