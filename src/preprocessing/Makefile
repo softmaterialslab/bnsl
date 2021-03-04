@@ -35,7 +35,7 @@ nanoHUB-install:
 	@echo "Installing $(PROG) into $(bindir) directory on nanohub"; cp -f $(PROG) $(BIN)
 
 cluster-install:
-	module load PrgEnv-gnu && module load boost; make CCF=BigRed2 all
+	module load PrgEnv-gnu && module load boost/gnu/1.73.0; make CCF=BigRed2 all
 	@echo "Installing $(PROG) into $(bindir) directory on the computing cluster"; cp -f $(PROG) $(BIN)
 
 $(PROG) : $(OBJ)

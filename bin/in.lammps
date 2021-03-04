@@ -7,7 +7,7 @@ neighbor	0.3	bin
 neigh_modify	every	1	delay	0	check	yes
 
 ## Create Simulation Box, Atoms ##
-read_data	infiles/initCoords_Nv=100_cD=100x_1-1.assembly
+read_data	infiles/initCoords_100x_1-4.assembly
 
 ## Group Atoms by Type ##
 group virus1 type	1
@@ -68,7 +68,8 @@ dump   		myimages all image 10000 outfiles/image.*.jpg type type axes no 0.8 0.0
 dump_modify    	myimages pad 3
 dump_modify	myimages boxcolor black backcolor white
 dump_modify 	myimages adiam 1 1
-dump_modify 	myimages adiam 2 0.1
+dump_modify 	myimages adiam 2 1
+dump_modify 	myimages adiam 3 0.1
 
 
 print "OUTPUT COLUMNS: SIMULATION STEP NUMBER | TEMPERATURE | NP POTENTIAL ENERGY | SYSTEM VOLUME"
@@ -89,9 +90,9 @@ restart	500000	assemblyRestart.*	# creates 3 restart files throughout run
 run	1500000
 
 unfix		ens
-undump		posD
-undump		v1OnlyD
-undump		v2OnlyD
+#undump		posD
+#undump		v1OnlyD
+#undump		v2OnlyD
 uncompute	myVirus1T
 uncompute	myVirus2T
 uncompute	myDendT
