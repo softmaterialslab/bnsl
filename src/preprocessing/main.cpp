@@ -16,20 +16,24 @@ using namespace boost::program_options;
 
 int main(int argc, const char *argv[]) {
 
-    /*Replacable variables*/
-    string ligandNumText = "USERINPUT_LIGAND_NUMBER";
-    string npChargeText = "USERINPUT_NP_CHARGE";
-    string ligandChargeText = "DEVINPUT_LIGAND_CHARGE";
+    /*User Inputs*/
+    //string ligandNumText = "USERINPUT_LIGAND_NUMBER";
+    //string npChargeText = "USERINPUT_NP_CHARGE";
+    //string mpiText = "NODESIZE";
+
+    string ligandNumFileNameText = "USERINPUT_LIGAND_FILENAME";
     string saltText = "USERINPUTSALT";
     string dataSetCountText = "USERINPUT_DATASETCOUNT";
-    string ligandNumFileNameText = "USERINPUT_LIGAND_FILENAME";
 
-    string mpiText = "NODESIZE";
-
+    // Dev inputs
+    string vlp1ChargeText = "DEVINPUT_VLP1_CHARGE";
+    string vlp2ChargeText = "DEVINPUT_VLP2_CHARGE";
+    string ligandChargeText = "DEVINPUT_LIGAND_CHARGE";
 
     const double pi = 3.141593;
     // big for NP, small for ligand
-    int n, Q;       //user input
+    int n, Q_vlp1, Q_vlp2;       //dev input
+    int e2k2ratio; //user input
     double c;       //user input
     double D, d;    //dev input, but could be made user input
     int q;          //dev input
@@ -44,10 +48,12 @@ int main(int argc, const char *argv[]) {
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
             ("help,h", "print usage message")
-            ("Qnp,Q", value<int>(&Q)->default_value(-1500), "Q in e")
-            ("NLigand,n", value<int>(&n)->default_value(25))
+            ("Qvlp1,E", value<int>(&Q_vlp1)->default_value(-1500), "Q_E2 in e")
+            ("Qvlp2,K", value<int>(&Q_vlp2)->default_value(-600), "Q_K2 in e")
+            ("e2k2ratio,r", value<int>(&e2k2ratio)->default_value(1), "e2:k2 in multiples")
+            ("NLigand,n", value<int>(&n)->default_value(100))
             ("Salt,c", value<double>(&c)->default_value(0.150), "c in Molars")
-            ("qnp,q", value<int>(&q)->default_value(35), "q in e")
+            ("qnp,q", value<int>(&q)->default_value(45), "q in e")
             ("NPDiameter,D", value<double>(&D)->default_value(56), "D in nm")
             ("LDiameter,d", value<double>(&d)->default_value(6.7), "d in nm")
             ("Mpi_procs,m", value<int>(&mpiProcs)->default_value(1), "Number of MPI procs for Lammps")
@@ -55,7 +61,7 @@ int main(int argc, const char *argv[]) {
              "Specify the initial dump step to be used (dump step, not timestep).")
             ("dataSetCount,N", boost::program_options::value<int>(&dataSetCount)->default_value(150),
              "Specify the number of subsequent datasets to use after the initial dump step.");
-
+    //hard code the ratio
 
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
@@ -68,19 +74,27 @@ int main(int argc, const char *argv[]) {
 
     /******************computations of dev variables****************/
 
-    double userInputNpCharge = Q * (exp((1.64399 * 56) / sqrt(1 / c)) / (1 + ((1.64399 * 56) / sqrt(1 / c))));
-    userInputNpCharge = userInputNpCharge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
-
+    double devInputQvlp1Charge = Q_vlp1 * (exp((1.64399 * 56) / sqrt(1 / c)) / (1 + ((1.64399 * 56) / sqrt(1 / c))));
+    devInputQvlp1Charge = devInputQvlp1Charge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
+    
+    double devInputQvlp2Charge = Q_vlp2 * (exp((1.64399 * 56) / sqrt(1 / c)) / (1 + ((1.64399 * 56) / sqrt(1 / c))));
+    devInputQvlp2Charge = devInputQvlp2Charge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
+    
     double devInputLigandCharge = q * (exp((1.64399 * 6.7) / sqrt(1 / c)) / (1 + ((1.64399 * 6.7) / sqrt(1 / c))));
     devInputLigandCharge = devInputLigandCharge * (1.6018 * 1e-19) / (1.60074 * 1e-19);
 
     double userInputSalt = 1 / (1e3 * sqrt(1 / (2 * 4 * pi * 0.714295 * (6.022 * 1e23) * c)));
     //double userInputSalt = 3.2879795708993616*1e9/sqrt(1/c);
     userInputSalt = userInputSalt * 56 * 1e-9;
-
+    
+    
     std::string initcoords = "initCoords_" + std::to_string(n);
-    initcoords = initcoords + "x.assembly";
-
+    if(e2k2ratio==1)
+        initcoords = initcoords+"x_1-1";
+    else if(e2k2ratio == 4)
+        initcoords = initcoords+"x_1-4";
+    initcoords = initcoords + ".assembly";
+    //cout<<"\n ===>"<<initcoords;
     ofstream inputScript("in.lammps", ios::trunc);
     if (inputScript.is_open()) {
 
@@ -89,13 +103,21 @@ int main(int argc, const char *argv[]) {
         ifstream inputTemplate("infiles/in.lammps.template", ios::in);
         if (inputTemplate.is_open()) {
             while (getline(inputTemplate, line)) {
-                std::size_t found = line.find(ligandNumText);
-                if (found != std::string::npos)
-                    line.replace(found, ligandNumText.length(),  std::to_string(n));
+//                std::size_t found = line.find(ligandNumText);
+//                if (found != std::string::npos)
+//                    line.replace(found, ligandNumText.length(),  std::to_string(n));
 
-                found = line.find(npChargeText);
+//                found = line.find(npChargeText);
+//                if (found != std::string::npos)
+//                    line.replace(found, npChargeText.length(), std::to_string(userInputNpCharge));
+
+                // Added for bnsl
+                std::size_t found = line.find(vlp1ChargeText);
                 if (found != std::string::npos)
-                    line.replace(found, npChargeText.length(), std::to_string(userInputNpCharge));
+                    line.replace(found, vlp1ChargeText.length(), std::to_string(devInputQvlp1Charge));
+                found = line.find(vlp2ChargeText);
+                if (found != std::string::npos)
+                    line.replace(found, vlp2ChargeText.length(), std::to_string(devInputQvlp2Charge));
 
                 found = line.find(ligandChargeText);
                 if (found != std::string::npos)
@@ -105,13 +127,14 @@ int main(int argc, const char *argv[]) {
                 if (found != std::string::npos)
                     line.replace(found, saltText.length(), std::to_string(userInputSalt));
 
+                //unsure
                 found = line.find(dataSetCountText);
                 if (found != std::string::npos)
                     line.replace(found, dataSetCountText.length(), std::to_string(dataSetCount));
 
-                found = line.find(ligandNumFileNameText);
-                if (found != std::string::npos)
-                    line.replace(found, ligandNumFileNameText.length(), initcoords);
+               found = line.find(ligandNumFileNameText);
+               if (found != std::string::npos)
+                   line.replace(found, ligandNumFileNameText.length(), initcoords);
 
                 inputScript << line << endl;
             }

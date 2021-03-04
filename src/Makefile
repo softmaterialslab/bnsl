@@ -10,7 +10,8 @@ BIN = ../bin/
 PRE = preprocessing
 POST = postprocessing
 SCRIPT = scripts
-Q=1500 
+E=1500
+K=600
 n=25 
 c=0.150 
 q=35 
@@ -24,13 +25,12 @@ all:
 	@echo "Starting build of the project";
 ifeq ($(CCF),BigRed2)	
 	+$(MAKE) -C $(PRE) cluster-install
-	+$(MAKE) -C $(POST) cluster-install
 else ifeq ($(CCF),nanoHUB)
 	+$(MAKE) -C $(PRE) nanoHUB-install
-	+$(MAKE) -C $(POST) nanoHUB-install
+	#+$(MAKE) -C $(POST) nanoHUB-install
 else
 	+$(MAKE) -C $(PRE) install
-	+$(MAKE) -C $(POST) install
+	#+$(MAKE) -C $(POST) install
 endif
 	@echo "Ending the build of the project";
 
@@ -63,3 +63,4 @@ distclean: clean
 	rm -f $(BIN)/$(PROGPOST)
 
 .PHONY: all clean distclean
+

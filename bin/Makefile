@@ -2,7 +2,8 @@
 
 JOBSCR = macroassembly.pbs
 TESTSCR = test.pbs
-Q=1500
+E=1500
+K=600
 n=25 
 c=0.150 
 q=35 
@@ -13,7 +14,7 @@ N=150
 NODESIZE=4
 
 run-preprocessor:
-	./preprocessor -Q -$(Q) -n $(n) -c $(c) -q $(q) -D $(D) -d $(d) -i $(i) -N $(N)
+	./preprocessor -E $(E) -K $(K) -n $(n) -c $(c) -q $(q) -D $(D) -d $(d) -i $(i) -N $(N)
 
 submit: 
 	@echo "Launching the job";
