@@ -7,7 +7,7 @@ neighbor	0.3	bin
 neigh_modify	every	1	delay	0	check	yes
 
 ## Create Simulation Box, Atoms ##
-read_data	infiles/initCoords_Nv=100_cD=100x_1-1.assembly
+read_data	infiles/USERINPUT_LIGAND_FILENAME
 
 ## Group Atoms by Type ##
 group virus1 type	1
