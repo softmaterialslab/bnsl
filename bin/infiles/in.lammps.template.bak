@@ -3,33 +3,32 @@
 units lj
 boundary p p p
 atom_style hybrid charge sphere
-neighbor 0.3 bin
-neigh_modify every 1 delay 0 check yes
+neighbor	0.3	bin
+neigh_modify	every	1	delay	0	check	yes
 
 ## Create Simulation Box, Atoms ##
 read_data	infiles/USERINPUT_LIGAND_FILENAME
 
 ## Group Atoms by Type ##
-group virus1 	type	1
-group virus2 	type	2
-group dend 	type	3
+group virus1 type	1
+group virus2 type	2
+group dend type	3
 group allViruses id 1:100
 
 ## Defining Particle/Medium Properties ##
 mass	1	1
 mass	2	1
 mass	3	0.0029024	# relative mass of dendrimer to P22
-
 dielectric	78.54
 set	type	1	charge	DEVINPUT_VLP1_CHARGE	# qV1_DLVO (in LJ units)
 set	type	2	charge	DEVINPUT_VLP2_CHARGE	# qV2_DLVO (in LJ units)
 set	type	3	charge	DEVINPUT_LIGAND_CHARGE	# qD_DLVO (in LJ units)
 
 ## Ascribing Initial Velocities ##
-velocity all create 1. 4928459 rot yes dist gaussian units box	# random seed, zero net angular momentum, gaussian dist from MB
+velocity	all	create	1.	4928459	rot	yes	dist	gaussian	units	box	# 1-kB*T,random seed,zero net ang.mom.,gauss from MB stats
 
 ## Ascribing interparticle potentials: ##
-pair_style      hybrid/overlay lj/expand 0.09019784316771746 coul/debye USERINPUTSALT 1.5206911690492193 # LJ_cut without delta, kappa, Global ES_cut
+pair_style hybrid/overlay lj/expand 0.09019784316771746 coul/debye USERINPUTSALT 1.5206911690492193 # LJ_cut without delta, kappa, Global ES_cut
 pair_coeff 	1 1 lj/expand 1 1. 0 						# epsilon, sigma_hc, delta_V1-V1
 pair_coeff 	1 1 coul/debye 1.5206911690492193 				# V1-V1 ES_cut
 pair_coeff 	2 2 lj/expand 1 1. 0 						# epsilon, sigma_hc, delta_V2-V2
@@ -44,27 +43,27 @@ pair_coeff 	3 3 lj/expand 1 0.11964285714285713 0. 				# epsilon, sigma_hc, delt
 pair_coeff 	3 3 coul/debye 0.48879359005153483 				# D-D ES_cut
 pair_modify 	shift yes 							# the additive e_LJ for repulsion-only
 
-## Some key variables: ##
-
-variable	myTStep	equal 0.000025
+## Ensemble Fixes (+ for output) ##
+variable	myTStep	equal	0.000025
 timestep	${myTStep}
-variable	myDStep	equal 1000 # change to ensure light files and enough data
+variable	myDStep	equal	1000 #100000
 
-## Ensemble Fixes:  ##
-fix		ens all	nvt temp 1. 1. 0.0025 # T_start, T_stop, T_damp=100*timestep
+fix	ens	all	nvt	temp	1.	1.	0.0025	# T_start, T_stop, T_damp=100*timestep
+
 
 ## Define Computes for Output ##
-#compute	myVirus1T	virus1	temp
-#compute	myVirus2T	virus2	temp
-#compute	myDendT 	dend	temp
-#compute	virus1PotVec	virus1	pe/atom
-#compute	myVirus1Pot	virus1	reduce	sum	c_virus1PotVec
-#compute	virus2PotVec	virus2	pe/atom
-#compute	myVirus2Pot	virus2	reduce	sum	c_virus2PotVec
-#compute	dendPotVec	dend	pe/atom
-#compute	myDendPot	dend	reduce	sum	c_dendPotVec
+compute	myVirus1T	virus1	temp
+compute	myVirus2T	virus2	temp
+compute	myDendT 	dend	temp
+compute	virus1PotVec	virus1	pe/atom
+compute	myVirus1Pot	virus1	reduce	sum	c_virus1PotVec
+compute	virus2PotVec	virus2	pe/atom
+compute	myVirus2Pot	virus2	reduce	sum	c_virus2PotVec
+compute	dendPotVec	dend	pe/atom
+compute	myDendPot	dend	reduce	sum	c_dendPotVec
 
-## Images ##
+
+ ## Initial Image Dump ##
 dump   		myimages all image 10000 outfiles/image.*.jpg type type axes no 0.8 0.02 view 60 -30
 dump_modify    	myimages pad 3
 dump_modify	myimages boxcolor black backcolor white
@@ -72,39 +71,35 @@ dump_modify 	myimages adiam 1 1
 dump_modify 	myimages adiam 2 1
 dump_modify 	myimages adiam 3 0.1
 
+
 print "OUTPUT COLUMNS: SIMULATION STEP NUMBER | TEMPERATURE | NP POTENTIAL ENERGY | SYSTEM VOLUME"
 
-thermo_style	custom step temp etotal ke pe vol press
-thermo		10000 # change based on file size and information frequency 
+thermo_style	custom	step temp c_myVirus1T c_myVirus2T c_myDendT c_myVirus1Pot c_myVirus2Pot	c_myDendPot etotal ke pe vol press
+thermo	10000 #2500
 
-#restart		500000	outfiles/assemblyRestart.*	# creates 3 restart files throughout run
-run		1500000
+restart	500000	assemblyRestart.*	# creates 3 restart files throughout run
+run	1500000
 
 ## Defining Output Information ##
-#dump    	allV    allViruses  custom  ${myDStep}    outfiles/dump.melt    id	type	x	y	z	# c_atomPot	c_atomKin 
-
-#restart		500000	outfiles/assemblyRestart.*	# creates 3 restart files throughout run
-run		1500000
-
-unfix		ens
-
-#undump		posD
-#undump		v1OnlyD
-#undump		v2OnlyD
-#uncompute	myVirus1T
-#uncompute	myVirus2T
-#uncompute	myDendT
-#uncompute	virus1PotVec
-#uncompute	myVirus1Pot
-#uncompute	virus2PotVec
-#uncompute	myVirus2Pot
-#uncompute	dendPotVec
-#uncompute	myDendPot
-
-## to be implemented: ##
-
-#thermo_style	custom	step temp c_myVirus1T c_myVirus2T c_myDendT c_myVirus1Pot c_myVirus2Pot	c_myDendPot etotal ke pe vol press
-
+dump    allV    allViruses  custom  ${myDStep}    outfiles/dump.melt    id	type	x	y	z	# c_atomPot	c_atomKin 
 #dump	v1OnlyD	virus1	custom	1000	outfiles/dumpVirus1Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
 #dump	v2OnlyD	virus2	custom	1000	outfiles/dumpVirus2Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
 #dump	posD	all	custom	${myDStep}	outfiles/dump.melt	id	type	x	y	z	# c_atomPot	c_atomKin
+
+restart	500000	assemblyRestart.*	# creates 3 restart files throughout run
+run	1500000
+
+unfix		ens
+#undump		posD
+#undump		v1OnlyD
+#undump		v2OnlyD
+uncompute	myVirus1T
+uncompute	myVirus2T
+uncompute	myDendT
+uncompute	virus1PotVec
+uncompute	myVirus1Pot
+uncompute	virus2PotVec
+uncompute	myVirus2Pot
+uncompute	dendPotVec
+uncompute	myDendPot
+
