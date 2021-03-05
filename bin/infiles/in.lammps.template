@@ -88,6 +88,7 @@ run		1500000
 
 unfix		ens
 
+undump		allV
 #undump		posD
 #undump		v1OnlyD
 #undump		v2OnlyD
