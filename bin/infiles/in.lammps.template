@@ -81,7 +81,7 @@ thermo		10000 # change based on file size and information frequency
 run		1500000
 
 ## Defining Output Information ##
-#dump    	allV    allViruses  custom  ${myDStep}    outfiles/dump.melt    id	type	x	y	z	# c_atomPot	c_atomKin 
+dump    	allV    allViruses  custom  ${myDStep}    outfiles/dump.melt    id	type	x	y	z	# c_atomPot	c_atomKin 
 
 #restart		500000	outfiles/assemblyRestart.*	# creates 3 restart files throughout run
 run		1500000
