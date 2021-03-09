@@ -1,0 +1,238 @@
+# 3D simulation of virus macroassembly
+
+units lj
+boundary p p p
+atom_style hybrid charge sphere
+neighbor	0.3	bin
+neigh_modify	every	1	delay	0	check	yes
+
+## Create Simulation Box, Atoms ##
+read_data	initCoords.assembly
+
+## Group Atoms by Type ##
+group virus1 type	1
+group virus2 type	2
+group dend type	3
+group allViruses id 1:1000
+
+## Defining Particle/Medium Properties (for Phase 1 @ 225mM) ##
+mass	1	1
+mass	2	1
+mass	3	0.0029024	# relative mass of dendrimer to P22
+dielectric	78.54
+set	type	1	charge	-3.1038115775150463e20	# qV1_DLVO (in LJ units)
+set	type	2	charge	-1.2415246310060188e20	# qV2_DLVO (in LJ units)
+set	type	3	charge	1344.4936370516264	# qD_DLVO (in LJ units)
+
+## Ascribing Initial Velocities ##
+velocity	all	create	1.	4928459	rot	yes	dist	gaussian	units	box	# 1-kB*T,random seed,zero net ang.mom.,gauss from MB stats
+
+# Ascribing interparticle potentials: #
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	87.3390103331186	1.5206911690492193	# LJ_cut without delta, kappa, Global ES_cut
+pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
+pair_coeff	1	1	coul/debye	1.5206911690492193	# V1-V1 ES_cut
+pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
+pair_coeff	2	2	coul/debye	1.4120703712599896	# V2-V2 ES_cut
+pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
+pair_coeff	1	2	coul/debye	1.4663807701546046	# V1-V2 ES_cut
+pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
+pair_coeff	1	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
+pair_coeff	2	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
+pair_coeff	3	3	coul/debye	0.48879359005153483	# D-D ES_cut
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+
+## Ensemble Fixes (+ for output) ##
+variable	myTStep	equal	0.000025
+timestep	${myTStep}
+variable	myDStep	equal	250000
+fix	ens	all	nvt	temp	1.	1.	0.0025	# T_start, T_stop, T_damp=100*timestep
+#fix	posAvg	all	ave/atom	500	10001	10000000	x	y	z	# N_every, N_repeat, N_freq = N_dump
+
+## Define Computes for Output ##
+compute	myVirus1T	virus1	temp
+compute	myVirus2T	virus2	temp
+compute	myDendT 	dend	temp
+compute	virus1PotVec	virus1	pe/atom
+compute	myVirus1Pot	virus1	reduce	sum	c_virus1PotVec
+compute	virus2PotVec	virus2	pe/atom
+compute	myVirus2Pot	virus2	reduce	sum	c_virus2PotVec
+compute	dendPotVec	dend	pe/atom
+compute	myDendPot	dend	reduce	sum	c_dendPotVec
+#compute	atomPot 	all	pe/atom
+#compute	atomKin 	all	ke/atom
+
+## Defining Output Information ##
+dump	posD	all	custom	${myDStep}	dump.melt	id	type	x	y	z	# c_atomPot	c_atomKin
+dump    allV    allViruses  custom  5000    dumpVirusesOnly.melt    id	type	x	y	z	# c_atomPot	c_atomKin
+dump	v1OnlyD	virus1	custom	5000	dumpVirus1Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
+dump	v2OnlyD	virus2	custom	5000	dumpVirus2Only.melt	id	type	x	y	z	# c_atomPot	c_atomKin
+#dump	posAvgD	all	custom	10000000	dumpAvg.melt	id	type	f_posAvg[1]	f_posAvg[2]	f_posAvg[3]
+#dump	posInsD	all	custom	5000000	dump.*	id	type	x	y	z
+
+thermo_style	custom	step	temp	c_myVirus1T	c_myVirus2T	c_myDendT	c_myVirus1Pot	c_myVirus2Pot	c_myDendPot	etotal	ke	pe	vol	press
+thermo	10000
+
+### Run the Phase 1 (equilibrate at 225mM)  ###
+restart	50000000	assemblyRestart.*	# creates 2 restart files throughout run
+run	100000000
+
+### Redefine charges, pair potentials for Phase XXX (200 mM): ###
+# Ascribing new, normalized point charges: #
+set	type	1	charge	-2.7053995194191143e19	# qV1_DLVO (in LJ units)
+set	type	2	charge	-1.0821598077676458e19	# qV2_DLVO (in LJ units)
+set	type	3	charge	1047.4964819674271	# qD_DLVO (in LJ units)
+# Ascribing interparticle potentials: #
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	82.34400862489345	1.5206911690492193	# LJ_cut without delta, kappa, Global ES_cut
+pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
+pair_coeff	1	1	coul/debye	1.5206911690492193	# V1-V1 ES_cut
+pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
+pair_coeff	2	2	coul/debye	1.4120703712599896	# V2-V2 ES_cut
+pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
+pair_coeff	1	2	coul/debye	1.4663807701546046	# V1-V2 ES_cut
+pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
+pair_coeff	1	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
+pair_coeff	2	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
+pair_coeff	3	3	coul/debye	0.48879359005153483	# D-D ES_cut
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+# Run again: #
+restart	5000000	assemblyRestart.*	# creates 3 restart files throughout run
+run	5000000
+
+### Redefine charges, pair potentials for Phase VI (175 mM): ###
+# Ascribing new, normalized point charges: #
+set	type	1	charge	-2.02150787731019e18	# qV1_DLVO (in LJ units)
+set	type	2	charge	-8.08603150924076e17	# qV2_DLVO (in LJ units)
+set	type	3	charge	805.284165643723	# qD_DLVO (in LJ units)
+# Ascribing interparticle potentials: #
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	77.02576703197742	1.5206911690492193	# LJ_cut without delta, kappa, Global ES_cut
+pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
+pair_coeff	1	1	coul/debye	1.5206911690492193	# V1-V1 ES_cut
+pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
+pair_coeff	2	2	coul/debye	1.4120703712599896	# V2-V2 ES_cut
+pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
+pair_coeff	1	2	coul/debye	1.4663807701546046	# V1-V2 ES_cut
+pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
+pair_coeff	1	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
+pair_coeff	2	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
+pair_coeff	3	3	coul/debye	0.48879359005153483	# D-D ES_cut
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+# Run again: #
+restart	50000000	assemblyRestart.*	# creates 1 restart files throughout run
+run	50000000
+
+### Redefine charges, pair potentials for Phase VII (150 mM): ###
+# Ascribing new, normalized point charges: #
+set	type	1	charge	-1.2518175758520066e17	# qV1_DLVO (in LJ units)
+set	type	2	charge	-5.007270303408026e16	# qV2_DLVO (in LJ units)
+set	type	3	charge	609.2802107049865	# qD_DLVO (in LJ units)
+# Ascribing interparticle potentials: #
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	71.31200331860265	1.5206911690492193	# LJ_cut without delta, kappa, Global ES_cut
+pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
+pair_coeff	1	1	coul/debye	1.5206911690492193	# V1-V1 ES_cut
+pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
+pair_coeff	2	2	coul/debye	1.4120703712599896	# V2-V2 ES_cut
+pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
+pair_coeff	1	2	coul/debye	1.4663807701546046	# V1-V2 ES_cut
+pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
+pair_coeff	1	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
+pair_coeff	2	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
+pair_coeff	3	3	coul/debye	0.48879359005153483	# D-D ES_cut
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+# Run again: #
+restart	50000000	assemblyRestart.*	# creates 1 restart files throughout run
+run	50000000
+
+### Redefine charges, pair potentials for Phase VIII (125 mM): ###
+# Ascribing new, normalized point charges: #
+set	type	1	charge	-6.120555157648052e15	# qV1_DLVO (in LJ units)
+set	type	2	charge	-2.448222063059221e15	# qV2_DLVO (in LJ units)
+set	type	3	charge	452.04653648112503	# qD_DLVO (in LJ units)
+# Ascribing interparticle potentials: #
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	65.09865473080322	1.5206911690492193	# LJ_cut without delta, kappa, Global ES_cut
+pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
+pair_coeff	1	1	coul/debye	1.5206911690492193	# V1-V1 ES_cut
+pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
+pair_coeff	2	2	coul/debye	1.4120703712599896	# V2-V2 ES_cut
+pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
+pair_coeff	1	2	coul/debye	1.4663807701546046	# V1-V2 ES_cut
+pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
+pair_coeff	1	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
+pair_coeff	2	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
+pair_coeff	3	3	coul/debye	0.48879359005153483	# D-D ES_cut
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+# Run again: #
+restart	50000000	assemblyRestart.*	# creates 1 restart files throughout run
+run	50000000
+
+### Redefine charges, pair potentials for Phase IX (100 mM): ###
+# Ascribing new, normalized point charges: #
+set	type	1	charge	-2.19454273649063e14	# qV1_DLVO (in LJ units)
+set	type	2	charge	-8.778170945962517e13	# qV2_DLVO (in LJ units)
+set	type	3	charge	327.1421738223814	# qD_DLVO (in LJ units)
+# Ascribing interparticle potentials: #
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	58.226006888745715	1.5206911690492193	# LJ_cut without delta, kappa, Global ES_cut
+pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
+pair_coeff	1	1	coul/debye	1.5206911690492193	# V1-V1 ES_cut
+pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
+pair_coeff	2	2	coul/debye	1.4120703712599896	# V2-V2 ES_cut
+pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
+pair_coeff	1	2	coul/debye	1.4663807701546046	# V1-V2 ES_cut
+pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
+pair_coeff	1	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
+pair_coeff	2	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
+pair_coeff	3	3	coul/debye	0.48879359005153483	# D-D ES_cut
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+# Run again: #
+restart	50000000	assemblyRestart.*	# creates 1 restart files throughout run
+run	50000000
+
+### Redefine charges, pair potentials for Phase X (75 mM): ###
+# Ascribing new, normalized point charges: #
+set	type	1	charge	-5.101108469767286e12	# qV1_DLVO (in LJ units)
+set	type	2	charge	-2.0404433879069146e12	# qV2_DLVO (in LJ units)
+set	type	3	charge	228.98478443141548	# qD_DLVO (in LJ units)
+# Ascribing interparticle potentials: #
+pair_style	hybrid/overlay	lj/expand	0.09019784316771746	coul/debye	50.42520112658152	1.5206911690492193	# LJ_cut without delta, kappa, Global ES_cut
+pair_coeff	1	1	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V1
+pair_coeff	1	1	coul/debye	1.5206911690492193	# V1-V1 ES_cut
+pair_coeff	2	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V2-V2
+pair_coeff	2	2	coul/debye	1.4120703712599896	# V2-V2 ES_cut
+pair_coeff	1	2	lj/expand	1	1.	0	# epsilon, sigma_hc, delta_V1-V2
+pair_coeff	1	2	coul/debye	1.4663807701546046	# V1-V2 ES_cut
+pair_coeff	1	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V1-D
+pair_coeff	1	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	2	3	lj/expand	1	0.08035714285714285	0.47946428571428573	# epsilon, sigma_hc, delta_V2-D
+pair_coeff	2	3	coul/debye	0.9775871801030697	# V-D ES_cut
+pair_coeff	3	3	lj/expand	1	0.11964285714285713	0.	# epsilon, sigma_hc, delta_D-D
+pair_coeff	3	3	coul/debye	0.48879359005153483	# D-D ES_cut
+pair_modify	shift	yes	# the additive e_LJ for repulsion-only
+# Run again: #
+restart	50000000	assemblyRestart.*	# creates 1 restart files throughout run
+run	100000000
+
+## Undump after all phases are complete ##
+unfix	ens
+undump	posD
+undump	v1OnlyD
+undump	v2OnlyD
+uncompute	myVirus1T
+uncompute	myVirus2T
+uncompute	myDendT
+uncompute	virus1PotVec
+uncompute	myVirus1Pot
+uncompute	virus2PotVec
+uncompute	myVirus2Pot
+uncompute	dendPotVec
+uncompute	myDendPot
