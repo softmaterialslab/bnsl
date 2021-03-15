@@ -1,2 +1,14 @@
+* local module lods
+module load gsl && module load openmpi/3.0.1 && module load boost/1_67_0
+
 * for developing
+for small system:
 ./postprocessor -E 50 -t '1' -i 0 -N 101
+for large system:
+./postprocessor -E 270 -t '1' -i 9000 -N 10001
+for deployed system:
+./postprocessor -E 50 -t '1' -x 1 -i 0 -N 2001
+./postprocessor -E 50 -t 'A' -x 1 -i 0 -N 2001
+
+* next round
+./postprocessor -E 50 -t 'A' -x 4 -i 0 -N 2001

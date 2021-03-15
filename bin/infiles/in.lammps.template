@@ -13,7 +13,8 @@ read_data	infiles/USERINPUT_LIGAND_FILENAME
 group virus1 	type	1
 group virus2 	type	2
 group dend 	type	3
-group allViruses id 1:100
+#group allViruses id 1:100
+group allViruses union virus1 virus2
 
 ## Defining Particle/Medium Properties ##
 mass	1	1
@@ -78,13 +79,13 @@ thermo_style	custom step temp etotal ke pe vol press
 thermo		10000 # change based on file size and information frequency 
 
 #restart		500000	outfiles/assemblyRestart.*	# creates 3 restart files throughout run
-run		1500000
+run		2000000
 
 ## Defining Output Information ##
 dump    	allV    allViruses  custom  ${myDStep}    outfiles/dump.melt    id	type	x	y	z	# c_atomPot	c_atomKin 
 
 #restart		500000	outfiles/assemblyRestart.*	# creates 3 restart files throughout run
-run		1500000
+run		2000000
 
 unfix		ens
 

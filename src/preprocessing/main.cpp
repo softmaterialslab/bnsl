@@ -41,7 +41,7 @@ int main(int argc, const char *argv[]) {
     int mpiProcs;
 
     //  Details on the datasets to be used (first dumpstep, number of directly subsequent steps):
-    int initDumpStep, dataSetCount;
+    //int initDumpStep, dataSetCount;
 
 
     // Specify variables via command line (-X x):
@@ -56,21 +56,13 @@ int main(int argc, const char *argv[]) {
             ("qnp,q", value<int>(&q)->default_value(45), "q in e")
             ("NPDiameter,D", value<double>(&D)->default_value(56), "D in nm")
             ("LDiameter,d", value<double>(&d)->default_value(6.7), "d in nm")
-            ("Mpi_procs,m", value<int>(&mpiProcs)->default_value(1), "Number of MPI procs for Lammps")
-            ("initDumpStep,i", boost::program_options::value<int>(&initDumpStep)->default_value(0),
-             "Specify the initial dump step to be used (dump step, not timestep).")
-            ("dataSetCount,N", boost::program_options::value<int>(&dataSetCount)->default_value(150),
-             "Specify the number of subsequent datasets to use after the initial dump step.");
-    //hard code the ratio
+            ("Mpi_procs,m", value<int>(&mpiProcs)->default_value(1), "Number of MPI procs for Lammps");
 
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
     notify(vm);
 
-
     /*************************Preprocessing*************************/
-    /*Open a new the template file*/
-
 
     /******************computations of dev variables****************/
 
@@ -126,11 +118,6 @@ int main(int argc, const char *argv[]) {
                 found = line.find(saltText);
                 if (found != std::string::npos)
                     line.replace(found, saltText.length(), std::to_string(userInputSalt));
-
-                //unsure
-                found = line.find(dataSetCountText);
-                if (found != std::string::npos)
-                    line.replace(found, dataSetCountText.length(), std::to_string(dataSetCount));
 
                found = line.find(ligandNumFileNameText);
                if (found != std::string::npos)

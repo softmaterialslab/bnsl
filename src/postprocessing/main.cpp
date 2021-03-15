@@ -29,18 +29,18 @@ using namespace boost::program_options;
 // Fundamental quantities, units:
 double pi = 3.141592;//65358979323846264338327950288419716939937510582097494459230781640628620899862803482; // Pi.
 double Na = 6.022141e+23;	// Avogadro's.
-//double unitlength = 56.0e-9;	// Unit length (diameter of virus in meters);
 long double unitlength; 	// Unit length (diameter of virus in meters);
 
+// Declaration of RDF functions:
+void compute_self_gr(int, vector<BINCONTAINER>&, unsigned int, vector<PARTICLE>&, long double, long double, long double, double, long double, ofstream&);
+void compute_gr_12(int, vector<BINCONTAINER> &, unsigned int, vector<PARTICLE> &, vector<PARTICLE> &, long double, long double, long double, double, long double, long double);
+
+/* Later dev:
+void assess_Select_Particles(vector<PARTICLE>&, vector<PARTICLE>&, double, double, double);
 double CondensedCount, BridgedCount;
 vector<PARTICLE> Particle2_List_Condensed, Particle2_List_Bridged;
 vector<double> CondensedCount_VsTime_List, BridgedCount_VsTime_List; // List of the number of selected particles of type 2 vs. used dump step.
-
-// Declaration of RDF/MSD functions:
-void compute_gr_11(int, vector<BINCONTAINER>&, unsigned int, vector<PARTICLE>&, long double, long double, long double, double, long double);
-void compute_gr_12(int, vector<BINCONTAINER> &, unsigned int, vector<PARTICLE> &, vector<PARTICLE> &, long double, long double, long double, double, long double, long double);
-void compute_gr_select_22(int, vector<BINCONTAINER> &, unsigned int, vector<PARTICLE> &, vector<PARTICLE> &, long double, long double, long double, double, long double, long double, int);
-void assess_Select_Particles(vector<PARTICLE>&, vector<PARTICLE>&, double, double, double);
+*/
 
 int main(int argc, const char *argv[]) {
     unsigned int Particle1_Count, Particle2_Count;
@@ -58,7 +58,7 @@ int main(int argc, const char *argv[]) {
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
             ("help,h", "print usage message")
-            ("VLP1count,E", value<unsigned int>(&Particle1_Count)->default_value(50), "Number of particles of type 1")
+            ("VLP1count,e", value<unsigned int>(&Particle1_Count)->default_value(50), "Number of particles of type 1")
             ("VLP1diameter,D", value<long double>(&D)->default_value(56), "Diameter of type 1 particles (in nm)")
             ("VLP2diameter,d", value<long double>(&d)->default_value(56), "d in nm")
             ("stoichiometry,x", boost::program_options::value<int>(&stoichiometry)->default_value(1), "Relative ratio of two types (check)")
@@ -75,7 +75,7 @@ int main(int argc, const char *argv[]) {
     double Particle1_Diameter = 1;			// in reduced units of particle 1 diameter (not used)
 
     //  Input the molar concentrations (densities)
-    Particle1_RealDensity = (370e-9) / 2;		// 370 nM is total density; half of this is particle 1 density
+    Particle1_RealDensity = (370e-9) / (1+stoichiometry);		// 370 nM is total density; half of this is particle 1 density
 
     //  Compute density in reduced units (1L = 0.001 m^3)
     long double Particle1_Density = Particle1_RealDensity * Na * 1000 * pow(unitlength, 3);	
@@ -91,7 +91,6 @@ int main(int argc, const char *argv[]) {
     double bin_width = 0.005;	// change to smaller if needed
 
     //  Defining the type 2 count and concentrations relative to the stoichiometry (w.r.t. type 1):
-    stoichiometry = 1;
     Particle2_Count = stoichiometry * Particle1_Count;
     Particle2_RealDensity = stoichiometry * Particle1_RealDensity;
     cout << "Computed number of Type 2 particles in the box: " << Particle2_Count << endl;
@@ -119,19 +118,24 @@ int main(int argc, const char *argv[]) {
     //  Declare and initialize the g(r) histogram list.
     vector<PARTICLE> dummy_particle_list, Particle1_List, Particle2_List;
     vector<BINCONTAINER> gr11, gr12, gr22;
+	 
+    ofstream grStream11("outfiles/gr_EE_dr=0.005.out", ios::out);
+    ofstream grStream22("outfiles/gr_KK_dr=0.005.out", ios::out);
 
     cout << "RDF g(r) computation initialized" << endl;
 
     if (computationFlag == 'G') // [RDF-only]
     {
         if (typeFlag == 'A') {
-            compute_gr_11(0, gr11, 0, dummy_particle_list, bx, by, bz, bin_width, Particle1_RealDensity);
+            compute_self_gr(0, gr11, 0, dummy_particle_list, bx, by, bz, bin_width, Particle1_RealDensity, grStream11);
+            compute_self_gr(0, gr22, 0, dummy_particle_list, bx, by, bz, bin_width, Particle2_RealDensity, grStream22);
+            //compute_gr_12(0, gr12, 0, dummy_particle_list, dummy_particle_list, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
         }
 	else if (typeFlag == '1') {
-            compute_gr_11(0, gr11, 0, dummy_particle_list, bx, by, bz, bin_width, Particle1_RealDensity);
+            compute_self_gr(0, gr11, 0, dummy_particle_list, bx, by, bz, bin_width, Particle1_RealDensity, grStream11);
         }
 	else if (typeFlag == '2') {
-            compute_gr_select_22(0, gr22, 0, dummy_particle_list, dummy_particle_list, bx, by, bz, 0.1 * bin_width, Particle1_RealDensity, Particle2_RealDensity, initDumpStep);
+            compute_self_gr(0, gr22, 0, dummy_particle_list, bx, by, bz, bin_width, Particle2_RealDensity, grStream22);
         }
     }
 
@@ -155,8 +159,10 @@ int main(int argc, const char *argv[]) {
             cout << "dumpfiles" << fileNumber << ".melt could not be opened." << endl;
             continue;
         } 
-	else {
-            if (fileNumber%100==0) cout << "Opened sample " << fileNumber << ".melt successfully." << endl;
+        
+        else {
+            if (fileNumber%100==0) 
+					cout << "Opened sample " << fileNumber << ".melt successfully." << endl;
             actualDataSetCount++;
         }
 
@@ -206,16 +212,15 @@ int main(int argc, const char *argv[]) {
         //  Use the data (populate bins for RDF) for this dump file (pending requested QoI, types):
         if (computationFlag == 'G') {
             if (typeFlag == 'A') {
-                compute_gr_11(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
-                compute_gr_select_22(1, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, 0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
-                compute_gr_12(1, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, 0.1 * bin_width, Particle1_Density, Particle2_Density);
+                compute_self_gr(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
+                compute_self_gr(1, gr22, actualDataSetCount, Particle2_List, bx, by, bz, bin_width, Particle2_Density, grStream22);
+                //compute_gr_12(1, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
             } 
 	    else if (typeFlag == '1') {
-                compute_gr_11(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
+                compute_self_gr(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
             } 
 	    else if (typeFlag == '2') {
-                compute_gr_select_22(1, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz,
-                                     0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
+                compute_self_gr(1, gr22, actualDataSetCount, Particle2_List, bx, by, bz, bin_width, Particle2_Density, grStream22);
             }
         } 
 
@@ -236,44 +241,20 @@ int main(int argc, const char *argv[]) {
         cout << "done" << endl;
     }
 
-    //Particle1_List.resize(Particle1_Count);
-    //Particle2_List.resize(Particle2_Count);
-    
-    //  Normalize (and internally output) the RDF computation results:
+    //  Normalize output the RDF computation results:
     if (computationFlag == 'G') {
         if (typeFlag == 'A') {
-            compute_gr_11(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
-            compute_gr_12(2, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, 0.1 * bin_width,
-                          Particle1_Density, Particle2_Density);
-            compute_gr_select_22(2, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz,
-                                 0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
+            compute_self_gr(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
+            compute_self_gr(2, gr22, actualDataSetCount, Particle2_List, bx, by, bz, bin_width, Particle2_Density, grStream22);
+            //compute_gr_12(2, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
         } 
 	else if (typeFlag == '1') {
-            compute_gr_11(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
+            compute_self_gr(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
         } 
 	else if (typeFlag == '2') {
-            compute_gr_select_22(2, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz,
-                                 0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
+            compute_self_gr(2, gr22, actualDataSetCount, Particle2_List, bx, by, bz, bin_width, Particle2_Density, grStream22);
         }
     }
 
     return 0;
 }
-
-/*
-    
-    // Output the select dendrimer time-series data files:
-    if ((computationFlag == 'A' || computationFlag == 'T') && (typeFlag == 'A' || typeFlag == '2')) {
-        ofstream SelectCountStream("SelectDendrimer_Count_VsTime_dr=1.05.out", ios::out);
-        for (unsigned int i = 0; i < CondensedCount_VsTime_List.size(); i++)
-            SelectCountStream << initDumpStep + i << "\t" << CondensedCount_VsTime_List[i] << "\t"
-                              << BridgedCount_VsTime_List[i] << endl;
-        // Abscissae are by the used dump steps, i.e. if you start at step 200, "1" is 200.
-        SelectCountStream.close();
-        cout << "Select dendrimer time-series file output complete." << endl;
-    }
-
-    cout << "Program complete." << endl;
-    return 0;
-}
-*/

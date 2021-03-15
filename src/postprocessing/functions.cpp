@@ -11,11 +11,14 @@
 #include <functional>
 #include <algorithm>      // For the 'sort()' function used in generating type-specific instantaneous dump files.
 
+/* later dev:
 extern vector<PARTICLE> Particle2_List_Condensed, Particle2_List_Bridged;
 extern double pi, Na, unitlength, CondensedCount, BridgedCount;
-
 // Quantities used within functions, but that can't be re-declared or initialized each time:
 extern vector<double> CondensedCount_VsTime_List, BridgedCount_VsTime_List; // List of the number of selected particles of type 2 vs. used dump step.
+*/
+
+extern double pi, Na, unitlength;
 
 //  Overload the output operator for use with the VECTOR3D class:
 ostream& operator<<(ostream& os, VECTOR3D vec)
@@ -68,34 +71,33 @@ void generate_inst_dump_files(int Particle1_Count, int Particle2_Count, int init
     //  While the movie stream hasn't reached its end, continue importing and exporting requested content:
     while (!movieStream.eof())
     {
-	j++;                                                      //  Iterate to track (line) position of the stream.
-      	fileNumber = ((double)j/(9.0+particleCount) - 1.0);       //  The current dumpstep (net # lines / # per step).
-      	fileNumberInt = (int) fileNumber;
-      	getline(movieStream, tempString);
-      	instDumpLines.push_back(tempString);
-      	if(((j%(9 + particleCount)) == 0) && (initDumpStep <= fileNumber) && (fileNumber < (initDumpStep + dataSetCount))){
-	   instFileName = "dumpfiles/" + std::to_string(fileNumberInt) + ".melt";
-      	   instStream.open(instFileName);                                                          // Open stream to file.
-      	   sort(instDumpLines.end()-particleCount,instDumpLines.end(),numeric_string_compare);     // Sort by index.
-      	   for(vector<string>::iterator it = instDumpLines.begin() ; it != instDumpLines.end(); ++it)
-              instStream << *it << endl;
-      	   instStream.close();
-      	   if (fileNumberInt%100 == 0) 
-	      cout << "\tParticle-index-sorted time-ensemble sample number " << fileNumberInt <<  endl;
+		 j++;                                                      //  Iterate to track (line) position of the stream.
+		 fileNumber = ((double)j/(9.0+particleCount) - 1.0);       //  The current dumpstep (net # lines / # per step).
+       fileNumberInt = (int) fileNumber;
+       getline(movieStream, tempString);
+       instDumpLines.push_back(tempString);
+       if(((j%(9 + particleCount)) == 0) && (initDumpStep <= fileNumber) && (fileNumber < (initDumpStep + dataSetCount))){
+			 instFileName = "dumpfiles/" + std::to_string(fileNumberInt) + ".melt";
+      	 instStream.open(instFileName);                                                          // Open stream to file.
+      	 sort(instDumpLines.end()-particleCount,instDumpLines.end(),numeric_string_compare);     // Sort by index.
+      	 for(vector<string>::iterator it = instDumpLines.begin() ; it != instDumpLines.end(); ++it)
+				 instStream << *it << endl;
+			 instStream.close();
+      	 if (fileNumberInt%100 == 0) 
+				 cout << "\tParticle-index-sorted time-ensemble sample number " << fileNumberInt <<  endl;
     	}
+    	
     	if((j%(9 + particleCount)) == 0) 
-	   instDumpLines.clear();
+			instDumpLines.clear();
     	if(fileNumber > (initDumpStep + dataSetCount)) 
-           break; // Breaks the loop if the fileNumber exceeds that requested.
+			break; // Breaks the loop if the fileNumber exceeds that requested.
      }
      movieStream.close();
      cout << "\nSample generation done. Total number of samples: " << fileNumberInt+1 << "\n" << endl;
 }
 
-// The following RDF functions differ minimally from one another.  E.g. the only change in "gr_22" is output file name.
-
-//  Compute RDF g(r): pair correlation function for type 1-1 particles (say, virus-virus):
-void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density)
+//  Compute RDF g(r): pair correlation function for same type (self) particles (say, E-E)
+void compute_self_gr(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density, ofstream& grStream11)
 {
   //  Initialize the ensemble g(r) bins
   if (stageFlag == 0){				
@@ -108,17 +110,17 @@ void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
       gr[i].number = i+1;
       gr[i].width = bin_width;
       gr[i].position = (gr[i].width)*i;		// Assigns bin positions. See note directly below as well
-      gr[i].population = 0.0;			// Moving center of bins eval to post-normalization
+      gr[i].population = 0.0;						// Moving center of bins eval to post-normalization
     }
   }
 
   //  Bin all distances contained in the input file.
   if (stageFlag == 1){				
-  for (unsigned int i = 0; i < Particle1_List.size(); i++)			// For 1 type, change here (1).
+  for (unsigned int i = 0; i < Particle1_List.size(); i++)
     {
-      for (unsigned int j = i+1; j < Particle1_List.size(); j++)		// For 1 type, change here (2).
+      for (unsigned int j = i+1; j < Particle1_List.size(); j++)	
       {
-        VECTOR3D r_vec = Particle1_List[i].posvec - Particle1_List[j].posvec;   // For 1 type, change here (3).
+        VECTOR3D r_vec = Particle1_List[i].posvec - Particle1_List[j].posvec;  
         if (r_vec.x>bx/2) r_vec.x -= bx;
         if (r_vec.x<-bx/2) r_vec.x += bx;
         if (r_vec.y>by/2) r_vec.y -= by;
@@ -129,32 +131,19 @@ void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
         if (r < bz/2.0 - 1)		// avoiding the g(r) calculation at the largest r
         {
           int bin_number = ceil((r/bin_width));
-          gr[bin_number - 1].population = gr[bin_number - 1].population + 2;  // For 1 type, optionally change here (3.1).
+          gr[bin_number - 1].population = gr[bin_number - 1].population + 2;  
         }
       }
     }
-    //cout << "\tDataset binning complete for RDF (type 1-1)." << endl;
-
-    /*
-    ofstream grStream("outfiles/gr_11_raw.out", ios::out);
-
-    for (unsigned int b = 0; b < gr.size(); b++)
-    { 
-      double r = gr[b].position;
-      double rMedian = r + 0.5*bin_width;	// Compute the moving median as final abscissae
-      grStream << rMedian << "\t" << gr[b].population << endl;
-    }
-    grStream.close();
-    */
   }
 
   //  Normalize each bin count appropriately
   //  Output moving median abscissae (rMedian) & normalize for g(r) using non-moving median shell volumes binned
   if (stageFlag == 2){	
-    cout << endl << "RDF (type 1-1) calculation ends, beginning normalization & output." << endl;
+    cout << endl << "RDF (self) calculation ends, beginning normalization & output." << endl;
 
     int number_of_bins = int((bz/2.0)/bin_width);
-    ofstream grStream("outfiles/gr_VV_dr=0.005.out", ios::out);
+    //ofstream grStream("outfiles/gr_VV_dr=0.005.out", ios::out);
 
     for (int b = 0; b < number_of_bins; b++)
     { 
@@ -166,14 +155,14 @@ void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
       gr[b].population = gr[b].population / ngr;                      			// Normalize by the number of datasets
       gr[b].population = gr[b].population / nid;                      			// Normalize by the expected number in ideal gas
       if (rMedian <= 4.3)                                             			// Limiting to not show data at artificial cutoff
-        grStream << rMedian << "\t" << gr[b].population << endl;
+        grStream11 << rMedian << "\t" << gr[b].population << endl;
     }
-    grStream.close();
-    cout << "RDF (type 1-1) file output complete." << endl;
+    grStream11.close();
+    cout << "RDF (self) file output complete." << endl;
   }
 }
 
-//  Compute RDF g(r): pair correlation function for type 1-2 particles (say, virus-dendrimer):
+//  Compute RDF g(r): pair correlation function for diff type (cross) particles (say, virus-dendrimer or E-K)
 void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, vector<PARTICLE>& Particle2_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density, long double Particle2_Density)
 {
   if (stageFlag == 0)	// Initialize the ensemble g(r) bins.
@@ -191,7 +180,7 @@ void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
     }
   }
   if (stageFlag == 1)	// Bin all distances contained in the input file.
-  { // To change between poly- and monodisperse, values denoted in right margin.
+  { 
     for (unsigned int i = 0; i < Particle1_List.size(); i++)                      // For 1 type, change here (1).
     {
       for (unsigned int j = 0; j < Particle2_List.size(); j++)                    // For 1 type, change here (2).
@@ -211,7 +200,6 @@ void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
         }
       }
     }
-    //cout << "\tDataset binning complete for RDF (type 1-2)." << endl;
   }
   if (stageFlag == 2)	// Normalize each bin count appropriately (see comments).
   {
@@ -235,72 +223,7 @@ void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
   }
 }
 
-//  Compute RDF g(r): pair correlation function for select type 2-2 particles (say, condensed-only dendrimer-dendrimer):
-void compute_gr_select_22(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE> &Particle1_List, vector<PARTICLE> &Particle2_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density, long double Particle2_Density, int initDumpStep)
-{
-  if (stageFlag == 0)	// Initialize the ensemble g(r) bins.
-  {
-    ngr=0;		    // Number of datasets.
-    int number_of_bins = int((bz/2.0)/bin_width);
-    cout << "The number of bins is: " << number_of_bins << endl;
-    gr.resize(number_of_bins);
-    for (int i = 0; i < number_of_bins; i++)
-    {
-        gr[i].number = i + 1;
-        gr[i].width = bin_width;
-        gr[i].position = (gr[i].width) * i;           // Assigns bin positions.  See note directly below as well.
-        gr[i].population = 0.0;                       // NB moved moving median (center of bins) to post-normalization.
-    }
-  }
-  if (stageFlag == 1)	// Bin all distances contained in the input file.
-  {
-    // To change between poly- and monodisperse, change lines noted in right margin.
-    for (unsigned int i = 0; i < Particle2_List_Bridged.size(); i++)                      // For 1 type, change here (1).
-    {
-      for (unsigned int j = i+1; j < Particle2_List_Bridged.size(); j++)                    // For 1 type, change here (2).
-        {
-            VECTOR3D r_vec = Particle2_List_Bridged[i].posvec - Particle2_List_Bridged[j].posvec;     // For 1 type, change here (3).
-            if (r_vec.x>bx/2) r_vec.x -= bx;
-            if (r_vec.x<-bx/2) r_vec.x += bx;
-            if (r_vec.y>by/2) r_vec.y -= by;
-            if (r_vec.y<-by/2) r_vec.y += by;
-            if (r_vec.z>bz/2) r_vec.z -= bz;
-            if (r_vec.z<-bz/2) r_vec.z += bz;
-            double r=r_vec.GetMagnitude();
-            if (r < bz/2.0)
-            {
-                int bin_number = ceil((r/bin_width));
-                gr[bin_number - 1].population = gr[bin_number - 1].population + 2/BridgedCount;  // For 1 type, optionally change here (3.1).
-                //  Added per-addition normalization by "CondensedCount" as the N_condensed  varies with dump step (time).
-            }
-        }
-    }
-    cout << "\tDataset binning complete for RDF (select type 2-2)." << endl;
-  }
-  if (stageFlag == 2)	// Normalize each bin count appropriately (see comments).
-  {
-    cout << "RDF (select type 2-2) calculation ends, beginning normalization & output." << endl;
-    int number_of_bins = int((bz/2.0)/bin_width);
-    // Output the RDF:
-    ofstream grStream("gr_DD_Bridging_dr=0.0005.out", ios::out);
-    for (int b = 0; b < number_of_bins; b++)
-    { //  Output moving median abscissae (rMedian) & normalize for g(r) using non-moving median shell volumes binned.
-      double r = gr[b].position;
-      double vol_bin = (4.0 / 3.0) * pi * ((pow(r + bin_width, 3) - pow(r, 3)));  // Concentric shells' interstitial volume.
-      double nid = vol_bin * Particle2_Density;                       // For 1 type, change ParticleJ_Density (4).
-      double rMedian = r + 0.5*bin_width;                             // Compute the moving median as final abscissae.
-      //gr[b].population = gr[b].population / Particle2_List.size();    // Not necessary, done previously per step.
-      gr[b].population = gr[b].population / ngr;                      // Normalize by the number of datasets.
-      gr[b].population = gr[b].population / nid;                      // Normalize by the expected number in ideal gas.
-      grStream << rMedian << "\t" << gr[b].population << endl;
-    }
-    grStream.close();
-    cout << "\tRDF (select type 2-2) file output complete." << endl;
-  }
-}
-
-// check if this is used:
-
+/* not used now; later devel:
 // A function to assess the condensed and bridging type-2 particles (relative to type-1):
 void assess_Select_Particles(vector<PARTICLE>& Particle1_List, vector<PARTICLE> &Particle2_List, double bx, double by, double bz)
 {
@@ -340,3 +263,4 @@ bool return_Lesser_Type(string line1, string line2)
 { // Boolean indicator (1) if the particle type of line1 is less than that of line 2:
     return line1[line1.find(" ")+1] < line2[line2.find(" ")+1];
 }
+*/
