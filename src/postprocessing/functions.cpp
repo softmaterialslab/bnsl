@@ -80,7 +80,7 @@ void generate_inst_dump_files(int Particle1_Count, int Particle2_Count, int init
       	   for(vector<string>::iterator it = instDumpLines.begin() ; it != instDumpLines.end(); ++it)
               instStream << *it << endl;
       	   instStream.close();
-      	   if (fileNumberInt%10 == 0) 
+      	   if (fileNumberInt%100 == 0) 
 	      cout << "\tParticle-index-sorted time-ensemble sample number " << fileNumberInt <<  endl;
     	}
     	if((j%(9 + particleCount)) == 0) 
@@ -94,46 +94,12 @@ void generate_inst_dump_files(int Particle1_Count, int Particle2_Count, int init
 
 // The following RDF functions differ minimally from one another.  E.g. the only change in "gr_22" is output file name.
 
-// A function to assess the condensed and bridging type-2 particles (relative to type-1):
-void assess_Select_Particles(vector<PARTICLE>& Particle1_List, vector<PARTICLE> &Particle2_List, double bx, double by, double bz)
-{
-    //  Iterate over all type 2 particles, selecting only those within a threshold distance from particle(s) of type 1:
-    Particle2_List_Condensed.clear();   // Clear elements stored from the previous function call / dump step.
-    Particle2_List_Bridged.clear();
-    for (unsigned int i = 0; i < Particle2_List.size(); i++)        // Iterates over all type-2 (dendrimers).
-    {
-        int vCountNear = 0;
-        for (unsigned int j = 0; j < Particle1_List.size(); j++)    //  Iterates over all type-1 (viruses) for each type-2 (dendrimer).
-        {
-            VECTOR3D r_vec = Particle2_List[i].posvec - Particle1_List[j].posvec;
-            if (r_vec.x>bx/2) r_vec.x -= bx;
-            if (r_vec.x<-bx/2) r_vec.x += bx;
-            if (r_vec.y>by/2) r_vec.y -= by;
-            if (r_vec.y<-by/2) r_vec.y += by;
-            if (r_vec.z>bz/2) r_vec.z -= bz;
-            if (r_vec.z<-bz/2) r_vec.z += bz;
-            double r=r_vec.GetMagnitude();
-
-            if(r < 1.05*(((56 + 6.7)/2)/56)) vCountNear++; // Record the number of type-1 particles a given type-2 particle is near.
-        }
-        if(vCountNear >= 1) Particle2_List_Condensed.push_back(Particle2_List[i]);
-        if(vCountNear >= 2) Particle2_List_Bridged.push_back(Particle2_List[i]);
-    }
-
-    CondensedCount = Particle2_List_Condensed.size();
-    BridgedCount = Particle2_List_Bridged.size();
-    cout << "\t\tThe number of condensed dendrimer this timestep is: " << CondensedCount << endl;
-    cout << "\t\tThe number of bridging dendrimer this timestep is: " << BridgedCount << endl;
-    CondensedCount_VsTime_List.push_back(CondensedCount);
-    BridgedCount_VsTime_List.push_back(BridgedCount);
-}
-
 //  Compute RDF g(r): pair correlation function for type 1-1 particles (say, virus-virus):
 void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density)
 {
-  if (stageFlag == 0)	// Initialize the ensemble g(r) bins.
-  {
-    ngr=0;		    // Number of datasets.
+  //  Initialize the ensemble g(r) bins
+  if (stageFlag == 0){				
+    ngr=0;					// Number of datasets
     int number_of_bins = int((bz/2.0)/bin_width);
     cout << "The number of bins for g(r) computation are " << number_of_bins << "\n" << endl;
     gr.resize(number_of_bins);
@@ -141,17 +107,18 @@ void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
     {
       gr[i].number = i+1;
       gr[i].width = bin_width;
-      gr[i].position = (gr[i].width)*i;             // Assigns bin positions.  See note directly below as well.
-      gr[i].population = 0.0;                       // NB moved moving median (center of bins) to post-normalization.
+      gr[i].position = (gr[i].width)*i;		// Assigns bin positions. See note directly below as well
+      gr[i].population = 0.0;			// Moving center of bins eval to post-normalization
     }
   }
-  if (stageFlag == 1)	// Bin all distances contained in the input file.
-  { // To change between poly- and monodisperse, values denoted in right margin.
-  for (unsigned int i = 0; i < Particle1_List.size(); i++)                      // For 1 type, change here (1).
+
+  //  Bin all distances contained in the input file.
+  if (stageFlag == 1){				
+  for (unsigned int i = 0; i < Particle1_List.size(); i++)			// For 1 type, change here (1).
     {
-      for (unsigned int j = i+1; j < Particle1_List.size(); j++)                    // For 1 type, change here (2).
+      for (unsigned int j = i+1; j < Particle1_List.size(); j++)		// For 1 type, change here (2).
       {
-        VECTOR3D r_vec = Particle1_List[i].posvec - Particle1_List[j].posvec;     // For 1 type, change here (3).
+        VECTOR3D r_vec = Particle1_List[i].posvec - Particle1_List[j].posvec;   // For 1 type, change here (3).
         if (r_vec.x>bx/2) r_vec.x -= bx;
         if (r_vec.x<-bx/2) r_vec.x += bx;
         if (r_vec.y>by/2) r_vec.y -= by;
@@ -159,35 +126,50 @@ void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
         if (r_vec.z>bz/2) r_vec.z -= bz;
         if (r_vec.z<-bz/2) r_vec.z += bz;
         double r=r_vec.GetMagnitude();
-        if (r < bz/2.0 - 1)	// avoiding the g(r) calculation at the largest r
+        if (r < bz/2.0 - 1)		// avoiding the g(r) calculation at the largest r
         {
           int bin_number = ceil((r/bin_width));
           gr[bin_number - 1].population = gr[bin_number - 1].population + 2;  // For 1 type, optionally change here (3.1).
         }
       }
     }
-    cout << "\tDataset binning complete for RDF (type 1-1)." << endl;
+    //cout << "\tDataset binning complete for RDF (type 1-1)." << endl;
+
+    /*
+    ofstream grStream("outfiles/gr_11_raw.out", ios::out);
+
+    for (unsigned int b = 0; b < gr.size(); b++)
+    { 
+      double r = gr[b].position;
+      double rMedian = r + 0.5*bin_width;	// Compute the moving median as final abscissae
+      grStream << rMedian << "\t" << gr[b].population << endl;
+    }
+    grStream.close();
+    */
   }
-  if (stageFlag == 2)	// Normalize each bin count appropriately (see comments).
-  {
+
+  //  Normalize each bin count appropriately
+  //  Output moving median abscissae (rMedian) & normalize for g(r) using non-moving median shell volumes binned
+  if (stageFlag == 2){	
     cout << endl << "RDF (type 1-1) calculation ends, beginning normalization & output." << endl;
+
     int number_of_bins = int((bz/2.0)/bin_width);
     ofstream grStream("outfiles/gr_VV_dr=0.005.out", ios::out);
 
     for (int b = 0; b < number_of_bins; b++)
-    { //  Output moving median abscissae (rMedian) & normalize for g(r) using non-moving median shell volumes binned.
-            double r = gr[b].position;
-      double vol_bin = (4.0 / 3.0) * pi * ((pow(r + bin_width, 3) - pow(r, 3)));  // Concentric shells' interstitial volume.
-      double nid = vol_bin * Particle1_Density;                       // For 1 type, change ParticleJ_Density (4).
-      double rMedian = r + 0.5*bin_width;                             // Compute the moving median as final abscissae.
-      gr[b].population = gr[b].population / Particle1_List.size();    // Normalize by the number of particles.
-      gr[b].population = gr[b].population / ngr;                      // Normalize by the number of datasets.
-      gr[b].population = gr[b].population / nid;                      // Normalize by the expected number in ideal gas.
-      if (rMedian <= 4.3)                                             // Limiting to not show data at artificial cutoff
+    { 
+      double r = gr[b].position;
+      double vol_bin = (4.0 / 3.0) * pi * ((pow(r + bin_width, 3) - pow(r, 3)));	// Concentric shells' interstitial volume
+      double nid = vol_bin * Particle1_Density;                       			// For 1 type, change ParticleJ_Density (4)
+      double rMedian = r + 0.5*bin_width;                             			// Compute the moving median as final abscissae
+      gr[b].population = gr[b].population / Particle1_List.size();    			// Normalize by the number of particles
+      gr[b].population = gr[b].population / ngr;                      			// Normalize by the number of datasets
+      gr[b].population = gr[b].population / nid;                      			// Normalize by the expected number in ideal gas
+      if (rMedian <= 4.3)                                             			// Limiting to not show data at artificial cutoff
         grStream << rMedian << "\t" << gr[b].population << endl;
     }
     grStream.close();
-    cout << "\tRDF (type 1-1) file output complete." << endl;
+    cout << "RDF (type 1-1) file output complete." << endl;
   }
 }
 
@@ -229,7 +211,7 @@ void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
         }
       }
     }
-    cout << "\tDataset binning complete for RDF (type 1-2)." << endl;
+    //cout << "\tDataset binning complete for RDF (type 1-2)." << endl;
   }
   if (stageFlag == 2)	// Normalize each bin count appropriately (see comments).
   {
@@ -318,6 +300,40 @@ void compute_gr_select_22(int stageFlag, vector<BINCONTAINER>& gr, unsigned int 
 }
 
 // check if this is used:
+
+// A function to assess the condensed and bridging type-2 particles (relative to type-1):
+void assess_Select_Particles(vector<PARTICLE>& Particle1_List, vector<PARTICLE> &Particle2_List, double bx, double by, double bz)
+{
+    //  Iterate over all type 2 particles, selecting only those within a threshold distance from particle(s) of type 1:
+    Particle2_List_Condensed.clear();   // Clear elements stored from the previous function call / dump step.
+    Particle2_List_Bridged.clear();
+    for (unsigned int i = 0; i < Particle2_List.size(); i++)        // Iterates over all type-2 (dendrimers).
+    {
+        int vCountNear = 0;
+        for (unsigned int j = 0; j < Particle1_List.size(); j++)    //  Iterates over all type-1 (viruses) for each type-2 (dendrimer).
+        {
+            VECTOR3D r_vec = Particle2_List[i].posvec - Particle1_List[j].posvec;
+            if (r_vec.x>bx/2) r_vec.x -= bx;
+            if (r_vec.x<-bx/2) r_vec.x += bx;
+            if (r_vec.y>by/2) r_vec.y -= by;
+            if (r_vec.y<-by/2) r_vec.y += by;
+            if (r_vec.z>bz/2) r_vec.z -= bz;
+            if (r_vec.z<-bz/2) r_vec.z += bz;
+            double r=r_vec.GetMagnitude();
+
+            if(r < 1.05*(((56 + 6.7)/2)/56)) vCountNear++; // Record the number of type-1 particles a given type-2 particle is near.
+        }
+        if(vCountNear >= 1) Particle2_List_Condensed.push_back(Particle2_List[i]);
+        if(vCountNear >= 2) Particle2_List_Bridged.push_back(Particle2_List[i]);
+    }
+
+    CondensedCount = Particle2_List_Condensed.size();
+    BridgedCount = Particle2_List_Bridged.size();
+    cout << "\t\tThe number of condensed dendrimer this timestep is: " << CondensedCount << endl;
+    cout << "\t\tThe number of bridging dendrimer this timestep is: " << BridgedCount << endl;
+    CondensedCount_VsTime_List.push_back(CondensedCount);
+    BridgedCount_VsTime_List.push_back(BridgedCount);
+}
 
 //  Function to sort by particle type (works with single-digit types only, must be in 2nd column):
 bool return_Lesser_Type(string line1, string line2)

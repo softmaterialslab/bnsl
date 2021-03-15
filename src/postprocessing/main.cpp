@@ -1,6 +1,7 @@
 /* 
+ * Feb, 2021
  * get PCF for type 1 particles
- * streamline the code and organization for future updates
+ * rewrite, streamline the code and organize content for future updates
  *
  * need to change double to long double: unitlength, bx by changed type
 */
@@ -12,15 +13,15 @@
 #include<cmath>
 #include<vector>
 #include<assert.h>
-#include <boost/filesystem/operations.hpp>
-#include <boost/program_options.hpp>
-#include "particle.h"
-#include "bincontainer.h"
-#include "functions.h"
+#include<boost/filesystem/operations.hpp>
+#include<boost/program_options.hpp>
+#include"particle.h"
+#include"bincontainer.h"
+#include"functions.h"
 #include<sstream>
 #include<string>
 #include<stdlib.h>
-#include <cstring>
+#include<cstring>
 
 using namespace std;
 using namespace boost::program_options;
@@ -36,13 +37,10 @@ vector<PARTICLE> Particle2_List_Condensed, Particle2_List_Bridged;
 vector<double> CondensedCount_VsTime_List, BridgedCount_VsTime_List; // List of the number of selected particles of type 2 vs. used dump step.
 
 // Declaration of RDF/MSD functions:
-void assess_Select_Particles(vector<PARTICLE>&, vector<PARTICLE>&, double, double, double);
-
 void compute_gr_11(int, vector<BINCONTAINER>&, unsigned int, vector<PARTICLE>&, long double, long double, long double, double, long double);
-
 void compute_gr_12(int, vector<BINCONTAINER> &, unsigned int, vector<PARTICLE> &, vector<PARTICLE> &, long double, long double, long double, double, long double, long double);
-
 void compute_gr_select_22(int, vector<BINCONTAINER> &, unsigned int, vector<PARTICLE> &, vector<PARTICLE> &, long double, long double, long double, double, long double, long double, int);
+void assess_Select_Particles(vector<PARTICLE>&, vector<PARTICLE>&, double, double, double);
 
 int main(int argc, const char *argv[]) {
     unsigned int Particle1_Count, Particle2_Count;
@@ -51,12 +49,12 @@ int main(int argc, const char *argv[]) {
 
     //  Flag denoting computation type ('A' = all, '1' = 1-1 only, '2' = 1-2 & select 2-2 only).
     char computationFlag, typeFlag;
-    //  Details on the datasets to be used (first dumpstep, number of directly subsequent steps):
+    //  Details on the datasets to be used (first dumpstep, number of directly subsequent steps)
     int initDumpStep, dataSetCount;
-    //  The fold higher count of Type 2 particles:
+    //  The fold higher count of Type 2 particles
     int stoichiometry;
 
-    // Specify variables via command line (-X -x):
+    // Specify variables via command line (-X -x)
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
             ("help,h", "print usage message")
@@ -64,14 +62,10 @@ int main(int argc, const char *argv[]) {
             ("VLP1diameter,D", value<long double>(&D)->default_value(56), "Diameter of type 1 particles (in nm)")
             ("VLP2diameter,d", value<long double>(&d)->default_value(56), "d in nm")
             ("stoichiometry,x", boost::program_options::value<int>(&stoichiometry)->default_value(1), "Relative ratio of two types (check)")
-            ("whichQuantity,q", boost::program_options::value<char>(&computationFlag)->default_value('G'),
-             "Specify which computation should be performed, 'G' (RDF), 'T' (Time-series)")
-            ("whichTypes,t", boost::program_options::value<char>(&typeFlag)->default_value('1'),
-             "Specify which type-type computations should be performed, 'A', '1', or '2' only")
-            ("initDumpStep,i", boost::program_options::value<int>(&initDumpStep)->default_value(100000),
-             "Specify the initial dump step to be used (dump step, not timestep)")
-            ("dataSetCount,N", boost::program_options::value<int>(&dataSetCount)->default_value(100),
-             "Specify the number of subsequent datasets to use after the initial dump step");
+            ("whichComp,q", boost::program_options::value<char>(&computationFlag)->default_value('G'), "Specify computation: 'G' (RDF), 'T' (Time-series)")
+            ("whichTypes,t", boost::program_options::value<char>(&typeFlag)->default_value('1'), "Specify type-type: 'A', '1', or '2'")
+            ("initDumpStep,i", boost::program_options::value<int>(&initDumpStep)->default_value(100000), "Specify the initial dump step (not timestep)")
+            ("dataSetCount,N", boost::program_options::value<int>(&dataSetCount)->default_value(100), "Specify the number of subsequent time samples");
 
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
@@ -80,9 +74,8 @@ int main(int argc, const char *argv[]) {
     unitlength = D/1000000000;
     double Particle1_Diameter = 1;			// in reduced units of particle 1 diameter (not used)
 
-    //  Input the molar concentrations (densities):
-    //Particle1_RealDensity = .000000037 * 10 / 2;	// 370 nM is total density; half of this is particle 1 density
-    Particle1_RealDensity = (37e-9) * 10 / 2;	// 370 nM is total density; half of this is particle 1 density
+    //  Input the molar concentrations (densities)
+    Particle1_RealDensity = (370e-9) / 2;		// 370 nM is total density; half of this is particle 1 density
 
     //  Compute density in reduced units (1L = 0.001 m^3)
     long double Particle1_Density = Particle1_RealDensity * Na * 1000 * pow(unitlength, 3);	
@@ -163,19 +156,19 @@ int main(int argc, const char *argv[]) {
             continue;
         } 
 	else {
-            if (fileNumber%10==0) cout << "Opened sample " << fileNumber << ".melt successfully." << endl;
+            if (fileNumber%100==0) cout << "Opened sample " << fileNumber << ".melt successfully." << endl;
             actualDataSetCount++;
         }
 
-        // Skipping the first 9 lines in a standard LAMMPS output describing aspects of the simulation and step.
+        //  Skipping the first 9 lines in a standard LAMMPS output describing aspects of the simulation and step.
         for (int j = 1; j <= 9; j++) {
             string dummyline;
             getline(instStream, dummyline);
         }
 
-        // Import the first sample for constructing particle list; latter samples update particle properties
+        //  Import the first sample for constructing particle list; latter samples update particle properties
         while (instStream >> col1 >> col2 >> col3 >> col4 >> col5) {
-            // Particle mass, charge set to zero (does not matter for PCF)
+            //  Particle mass, charge set to zero (does not matter for PCF)
             PARTICLE myparticle = PARTICLE(col1, Particle1_Diameter, 0, 0, VECTOR3D(col3, col4, col5), VECTOR3D(col3, col4, col5), bx, by, bz);
             //  If it's the initial data file, construct all particles and ascribe both position & initial position (same).
             if (i == 0) {
@@ -187,21 +180,21 @@ int main(int argc, const char *argv[]) {
             }
         }
 
-        // Verify the imported information 
+        //  Verify the imported information 
         if (i == 0) {
             //  Report and ensure the correct number of each have been constructed:
             cout << "\tConstructed number of particles of Type 1: " << Particle1_List.size() << " Type 2: " << Particle2_List.size() << endl;
             assert(Particle1_Count == Particle1_List.size());   	// Verify # of particles of each type imported are as expected.
             assert(Particle2_Count == Particle2_List.size());
-        } else if (fileNumber%10==0){
+        } else if (fileNumber%100==0){
             //  Report and ensure the correct number of each have been constructed:
             cout << "\tImported updates for particles of Type 1: " << newParticle1_Positions.size() << " Type 2: " << newParticle2_Positions.size() << endl;
             assert(Particle1_Count == newParticle1_Positions.size());   // Verify all new positions were imported as expected.
             assert(Particle2_Count == newParticle2_Positions.size());
         }
 
-        // If this is not the first data file, update particles' positions (using temp variable 'newParticle1_Positions'):
-        if (i >= 1) { // This works because all instantaneous dump files have been sorted by particle index.
+        //  If this is not the first data file, update particles' positions using temp variable 'newParticle1_Positions'
+        if (i >= 1) { //  This works because all instantaneous dump files have been sorted by particle index.
             for (unsigned int k = 0; k < Particle1_List.size(); k++) {
                 Particle1_List[k].posvec = newParticle1_Positions[k];
             }
@@ -210,66 +203,61 @@ int main(int argc, const char *argv[]) {
             }
         }
 
-        // Use the data (populate bins for RDF) for this dump file (pending requested QoI, types):
-        if (computationFlag == 'A') {
+        //  Use the data (populate bins for RDF) for this dump file (pending requested QoI, types):
+        if (computationFlag == 'G') {
             if (typeFlag == 'A') {
-                assess_Select_Particles(Particle1_List, Particle2_List, bx, by, bz);
                 compute_gr_11(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
-                compute_gr_12(1, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, 0.1 * bin_width,
-                              Particle1_Density, Particle2_Density);
-                compute_gr_select_22(1, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz,
-                                     0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
+                compute_gr_select_22(1, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, 0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
+                compute_gr_12(1, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, 0.1 * bin_width, Particle1_Density, Particle2_Density);
             } 
 	    else if (typeFlag == '1') {
                 compute_gr_11(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
             } 
 	    else if (typeFlag == '2') {
-                assess_Select_Particles(Particle1_List, Particle2_List, bx, by, bz);
                 compute_gr_select_22(1, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz,
                                      0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
             }
         } 
-	else if (computationFlag == 'T') assess_Select_Particles(Particle1_List, Particle2_List, bx, by, bz);
 
     } // end of for loop
 
-    return 0;
+    // if (computationFlag == 'T') assess_Select_Particles(Particle1_List, Particle2_List, bx, by, bz);
 
-    // Report the number of data sets actually used vs. the number requested:
+    //  Report the number of data sets actually used vs the number requested
     if (actualDataSetCount == dataSetCount)
-        cout << "All (" << dataSetCount << ") requested datasets imported successfully." << endl;
+        cout << "All (" << dataSetCount << ") requested datasets imported successfully" << endl;
     else
-        cout << "Warning:  only " << actualDataSetCount << " datasets were imported out of the total " << dataSetCount
-             << " requested." << endl;
+        cout << "Warning:  only " << actualDataSetCount << " datasets were imported out of the total " << dataSetCount << " requested" << endl;
 
-    // Delete the intermediate, instantaneous dump files (if requested):
+    // Delete the intermediate, instantaneous dump files (if requested)
     if (deleteInstFilesFlag == 'y') {
+        cout << "\tDeleting instantaneous dump steps directory...";
         boost::filesystem::remove_all("dumpfiles");
-        cout << "\tDeleting instantaneous dump steps directory now that computation is complete." << endl;
+        cout << "done" << endl;
     }
 
     //Particle1_List.resize(Particle1_Count);
     //Particle2_List.resize(Particle2_Count);
     
-    // Normalize (and internally output) the RDF computation results:
-    /*
-    if (computationFlag == 'A' || computationFlag == 'G') {
+    //  Normalize (and internally output) the RDF computation results:
+    if (computationFlag == 'G') {
         if (typeFlag == 'A') {
-            compute_gr_11(2, gr11, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width,
-                          Particle1_Density, 0 * Particle2_Density);
+            compute_gr_11(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
             compute_gr_12(2, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, 0.1 * bin_width,
                           Particle1_Density, Particle2_Density);
             compute_gr_select_22(2, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz,
                                  0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
-        } else if (typeFlag == '1') {
-            compute_gr_11(2, gr11, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width,
-                          Particle1_Density, 0 * Particle2_Density);
-        } else if (typeFlag == '2') {
+        } 
+	else if (typeFlag == '1') {
+            compute_gr_11(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density);
+        } 
+	else if (typeFlag == '2') {
             compute_gr_select_22(2, gr22, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz,
                                  0.1 * bin_width, Particle2_Density, Particle2_Density, initDumpStep);
         }
     }
-    */
+
+    return 0;
 }
 
 /*
