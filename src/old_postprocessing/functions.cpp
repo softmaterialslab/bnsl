@@ -29,7 +29,6 @@ bool is_not_digit(char c)
 {
     return !std::isdigit(c);
 }
-
 bool numeric_string_compare(const std::string& s1, const std::string& s2)
 {
     std::string::const_iterator it1 = s1.begin(), it2 = s2.begin();
@@ -54,42 +53,43 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2)
 //  Generate instantaneous (single timestep) files from the larger movie (dump) file:
 void generate_inst_dump_files(int Particle1_Count, int Particle2_Count, int initDumpStep, int dataSetCount)
 {
-    int particleCount = Particle1_Count + Particle2_Count;
-    vector<string> instDumpLines;             		//  List of all lines to be included in the instantaneous dump file.
-    ifstream movieStream;                     		//  Master dumpfile from which to extract instantaneous dump files.
-    movieStream.open("outfiles/dump.melt");   		//  Opens the master dumpfile.
+  int particleCount = Particle1_Count + Particle2_Count;
+  vector<string> instDumpLines;             //  List of all lines to be included in the instantaneous dump file.
+  ifstream movieStream;                     //  Master dumpfile from which to extract instantaneous dump files.
+  movieStream.open("outfiles/dump.melt");            //  Opens the master dumpfile.
+  //char instFileName[100];                   //  Buffers to be filled with the instantaneous file names.
     std::string instFileName = "dumpfiles/";
-    ofstream instStream(instFileName, ios::out);  	//  The stream that will be output to the all-types file.
-    string tempString;                        		//  A temporary string that will be updated as the file is read.
-    int j = 0;                                		//  Dummy (line/stream position) variable.
-    double fileNumber;                        		//  The file number (if rounded, dump step) being exported.
-    int fileNumberInt = 0;
+  ofstream instStream(instFileName, ios::out);  //  The stream that will be output to the all-types file.
+  string tempString;                        //  A temporary string that will be updated as the file is read.
+  int j = 0;                                //  Dummy (line/stream position) variable.
 
-    //  While the movie stream hasn't reached its end, continue importing and exporting requested content:
-    while (!movieStream.eof())
+  double fileNumber;                        //  The file number (if rounded, dump step) being exported.
+  //  While the movie stream hasn't reached its end, continue importing and exporting requested content:
+  while (!movieStream.eof())
+  {
+    j++;                                                      //  Iterate to track (line) position of the stream.
+    fileNumber = ((double)j/(9.0+particleCount) - 1.0);       //  The current dumpstep (net # lines / # per step).
+      int fileNumberInt = (int) fileNumber;
+    getline(movieStream, tempString);
+    instDumpLines.push_back(tempString);
+    if(((j%(9 + particleCount)) == 0) && (initDumpStep <= fileNumber) && (fileNumber < (initDumpStep + dataSetCount)))
     {
-	j++;                                                      //  Iterate to track (line) position of the stream.
-      	fileNumber = ((double)j/(9.0+particleCount) - 1.0);       //  The current dumpstep (net # lines / # per step).
-      	fileNumberInt = (int) fileNumber;
-      	getline(movieStream, tempString);
-      	instDumpLines.push_back(tempString);
-      	if(((j%(9 + particleCount)) == 0) && (initDumpStep <= fileNumber) && (fileNumber < (initDumpStep + dataSetCount))){
-	   instFileName = "dumpfiles/" + std::to_string(fileNumberInt) + ".melt";
-      	   instStream.open(instFileName);                                                          // Open stream to file.
-      	   sort(instDumpLines.end()-particleCount,instDumpLines.end(),numeric_string_compare);     // Sort by index.
-      	   for(vector<string>::iterator it = instDumpLines.begin() ; it != instDumpLines.end(); ++it)
-              instStream << *it << endl;
-      	   instStream.close();
-      	   if (fileNumberInt%10 == 0) 
-	      cout << "\tParticle-index-sorted time-ensemble sample number " << fileNumberInt <<  endl;
-    	}
-    	if((j%(9 + particleCount)) == 0) 
-	   instDumpLines.clear();
-    	if(fileNumber > (initDumpStep + dataSetCount)) 
-           break; // Breaks the loop if the fileNumber exceeds that requested.
-     }
-     movieStream.close();
-     cout << "\nSample generation done. Total number of samples: " << fileNumberInt+1 << "\n" << endl;
+
+
+        instFileName = "dumpfiles/" + std::to_string(fileNumberInt) + ".melt";
+
+        //sprintf(instFileName, "dumpfiles/%d.melt", int(fileNumber));  // Define file name.
+      instStream.open(instFileName);                                                          // Open stream to file.
+      sort(instDumpLines.end()-particleCount,instDumpLines.end(),numeric_string_compare);     // Sort by index.
+      for(vector<string>::iterator it = instDumpLines.begin() ; it != instDumpLines.end(); ++it)
+        instStream << *it << endl;
+      instStream.close();
+      cout << "\tGenerated index-sorted ensemble instantaneous dump file " << fileNumber << " from master movie." << endl;
+    }
+    if((j%(9 + particleCount)) == 0) instDumpLines.clear();
+    if(fileNumber > (initDumpStep + dataSetCount)) break; // Breaks the loop if the fileNumber exceeds that requested.
+  }
+  movieStream.close();
 }
 
 // The following RDF functions differ minimally from one another.  E.g. the only change in "gr_22" is output file name.
@@ -129,13 +129,13 @@ void assess_Select_Particles(vector<PARTICLE>& Particle1_List, vector<PARTICLE> 
 }
 
 //  Compute RDF g(r): pair correlation function for type 1-1 particles (say, virus-virus):
-void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density)
+void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, vector<PARTICLE>& Particle2_List, double bx, double by, double bz, double bin_width, double Particle1_Density, double Particle2_Density)
 {
   if (stageFlag == 0)	// Initialize the ensemble g(r) bins.
   {
     ngr=0;		    // Number of datasets.
     int number_of_bins = int((bz/2.0)/bin_width);
-    cout << "The number of bins for g(r) computation are " << number_of_bins << "\n" << endl;
+    cout << "The number of bins is: " << number_of_bins << endl;
     gr.resize(number_of_bins);
     for (int i = 0; i < number_of_bins; i++)
     {
@@ -192,7 +192,7 @@ void compute_gr_11(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
 }
 
 //  Compute RDF g(r): pair correlation function for type 1-2 particles (say, virus-dendrimer):
-void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, vector<PARTICLE>& Particle2_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density, long double Particle2_Density)
+void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE>& Particle1_List, vector<PARTICLE>& Particle2_List, double bx, double by, double bz, double bin_width, double Particle1_Density, double Particle2_Density)
 {
   if (stageFlag == 0)	// Initialize the ensemble g(r) bins.
   {
@@ -254,7 +254,7 @@ void compute_gr_12(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, ve
 }
 
 //  Compute RDF g(r): pair correlation function for select type 2-2 particles (say, condensed-only dendrimer-dendrimer):
-void compute_gr_select_22(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE> &Particle1_List, vector<PARTICLE> &Particle2_List, long double bx, long double by, long double bz, double bin_width, long double Particle1_Density, long double Particle2_Density, int initDumpStep)
+void compute_gr_select_22(int stageFlag, vector<BINCONTAINER>& gr, unsigned int ngr, vector<PARTICLE> &Particle1_List, vector<PARTICLE> &Particle2_List, double bx, double by, double bz, double bin_width, double Particle1_Density, double Particle2_Density, int initDumpStep)
 {
   if (stageFlag == 0)	// Initialize the ensemble g(r) bins.
   {
@@ -317,7 +317,66 @@ void compute_gr_select_22(int stageFlag, vector<BINCONTAINER>& gr, unsigned int 
   }
 }
 
-// check if this is used:
+//  Compute MSD m(t): mean square displacement of type 1 particles at a given dumpstep (pushes back to the master MSD):
+    //  Unlike in the RDF funcs, output is handled in main; this function simply computes that step, adds to master MSD.
+void compute_msd(vector<double> &MSD, vector<PARTICLE> &Particle_List, double bx, double by, double bz)
+{
+    VECTOR3D COM_vec = VECTOR3D(0,0,0);
+    vector<double> totSqDisp_Array; // The list containing all particles' total squared displacements.
+    double meanSqDisp = 0.0;
+
+    //  Compute the center of mass at the current dump step:
+    for(unsigned int i = 0; i < Particle_List.size(); i++) COM_vec += Particle_List[i].posvec ^ (1.0/Particle_List.size());
+
+    //  Iterate over each particle and push back its displacement at the given dumpstep:
+    for(unsigned int i = 0; i < Particle_List.size(); i++)
+    {   // Compute the displacement vector, account for periodicity:
+        VECTOR3D d_vec = Particle_List[i].posvec - Particle_List[i].initPosVec;// - COM_vec;
+        //if (d_vec.x>bx/2) d_vec.x -= bx;
+        //if (d_vec.x<-bx/2) d_vec.x += bx;
+        //if (d_vec.y>by/2) d_vec.y -= by;
+        //if (d_vec.y<-by/2) d_vec.y += by;
+        //if (d_vec.z>bz/2) d_vec.z -= bz;
+        //if (d_vec.z<-bz/2) d_vec.z += bz;
+        double tot_SqDisp = (d_vec.x * d_vec.x) + (d_vec.y * d_vec.y) + (d_vec.z * d_vec.z);
+
+        totSqDisp_Array.push_back(tot_SqDisp);
+    }
+
+    // Take the sum to compute the total square displacement, simultaneously taking the mean on the RHS:
+    for(unsigned int i = 0; i < totSqDisp_Array.size(); i++)
+    {
+        meanSqDisp += (totSqDisp_Array[i] / Particle_List.size());
+    }
+
+    // Append the number to the final MSD list (y-component of the time series):
+    MSD.push_back(meanSqDisp);
+}
+
+//  Unused functions:
+//  Make movie
+void make_movie(int num, vector<PARTICLE>& atom, double bx, double by, double bz, ofstream& outdump)
+{
+    outdump << "ITEM: TIMESTEP" << endl;
+    outdump << num - 1 << endl;
+    outdump << "ITEM: NUMBER OF ATOMS" << endl;
+    outdump << atom.size() << endl;
+    outdump << "ITEM: BOX BOUNDS" << endl;
+    outdump << -0.5*bx << "\t" << 0.5*bx << endl;
+    outdump << -0.5*by << "\t" << 0.5*by << endl;
+    outdump << -0.5*bz << "\t" << 0.5*bz << endl;
+    outdump << "ITEM: ATOMS index type x y z" << endl;
+    string type;
+    for (unsigned int i = 0; i < atom.size(); i++)
+    {
+        if (atom[i].charge > 0)
+            type = "1";
+        else
+            type = "-1";
+        outdump << i+1 << "   " << type << "   " << atom[i].posvec.x << "   " << atom[i].posvec.y << "   " << atom[i].posvec.z << endl;
+    }
+    return;
+}
 
 //  Function to sort by particle type (works with single-digit types only, must be in 2nd column):
 bool return_Lesser_Type(string line1, string line2)

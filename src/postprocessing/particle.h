@@ -1,5 +1,5 @@
 // This is the particle class
-// It provides features to the particle and also lists how their positions and velocities are updated
+// It provides features to the particle and also lists how their positions and velocities are updated (in case this is needed)
 
 #ifndef _PARTICLE_H
 #define _PARTICLE_H
@@ -11,24 +11,23 @@ class PARTICLE
   public:
 
   // members
-  int id;		// id of the particle
-  double diameter;	// diameter of the particle
-  double m; 		// mass of the particle
+  int id;			// id of the particle
+  double diameter;		// diameter of the particle
+  double m; 			// mass of the particle
   double charge;
-  VECTOR3D posvec;	// position vector of the particle
-  VECTOR3D velvec;	// velocity vector of the particle
-  VECTOR3D forvec;	// force vector on the particle
-  VECTOR3D initPosVec; // the initial position of the particle (for MSD code only)
-  double pe;		// potential energy
-  long double ke;	// kinetic energy
-  double energy;	// energy
-  double lx, ly, lz;	// box lengths-- useful information for particles to know, hence here
-  
+  VECTOR3D posvec;		// position vector of the particle
+  VECTOR3D velvec;		// velocity vector of the particle
+  VECTOR3D forvec;		// force vector on the particle
+  VECTOR3D initPosVec; 		// the initial position of the particle (for MSD code only)
+  double pe;			// potential energy
+  long double ke;		// kinetic energy
+  double energy;		// energy
+  long double lx, ly, lz;	// box lengths-- useful information for particles to know, hence here
+
   // member functions
   
-  // make a particle	// this defines the constructor -- I use this rarely in this code
-  PARTICLE(int id = 0, double diameter = 0, double mass = 0, double q = 1, VECTOR3D position = VECTOR3D(0,0,0), VECTOR3D initPosition = VECTOR3D(0,0,0), double lx = 0, double ly = 0, double lz = 0):
-	   id(id), diameter(diameter), m(mass), charge(q), posvec(position), initPosVec(initPosition), lx(lx), ly(ly), lz(lz)
+  // make a particle		// this defines the constructor
+  PARTICLE(int id = 0, double diameter = 0, double mass = 0, double q = 1, VECTOR3D position = VECTOR3D(0,0,0), VECTOR3D initPosition = VECTOR3D(0,0,0), long double lx = 0, long double ly = 0, long double lz = 0): id(id), diameter(diameter), m(mass), charge(q), posvec(position), initPosVec(initPosition), lx(lx), ly(ly), lz(lz)
   {
   }
   
@@ -63,7 +62,7 @@ class PARTICLE
   // calculate kinetic energy of a particle
   void kinetic_energy()				
   {
-    ke = 0.5 * m * velvec.GetMagnitude() * velvec.GetMagnitude();	// note that GetMagnitude function is a member of the VECTOR3D class and gets you the magnitude of a 3-D vector.
+    ke = 0.5 * m * velvec.GetMagnitude() * velvec.GetMagnitude();
     return;
   }
 };
