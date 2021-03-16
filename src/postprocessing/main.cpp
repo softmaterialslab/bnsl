@@ -178,7 +178,6 @@ int main(int argc, const char *argv[]) {
             //  Particle mass, charge set to zero (does not matter for PCF)
             PARTICLE myparticle = PARTICLE(col1, Particle1_Diameter, 0, 0, VECTOR3D(col3, col4, col5), VECTOR3D(col3, col4, col5), bx, by, bz);
             //  If it's the initial data file, construct all particles and ascribe both position & initial position (same).
-            cout<<"\n DEBUG: col2-"<<col2;
             if (i == 0) {
                 if (col2 == 1) Particle1_List.push_back(myparticle);
                 if (col2 == 2) Particle2_List.push_back(myparticle);
