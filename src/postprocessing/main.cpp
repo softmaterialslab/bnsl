@@ -43,6 +43,9 @@ vector<double> CondensedCount_VsTime_List, BridgedCount_VsTime_List; // List of 
 */
 
 int main(int argc, const char *argv[]) {
+    // User defined Inputs
+    int stoichiometry;      // The fold higher count of Type 2 particles
+
     unsigned int Particle1_Count, Particle2_Count;
     long double Particle1_RealDensity, Particle2_RealDensity;
     long double D, d;
@@ -51,9 +54,7 @@ int main(int argc, const char *argv[]) {
     char computationFlag, typeFlag;
     //  Details on the datasets to be used (first dumpstep, number of directly subsequent steps)
     int initDumpStep, dataSetCount;
-    //  The fold higher count of Type 2 particles
-    int stoichiometry;
-
+    
     // Specify variables via command line (-X -x)
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
@@ -111,7 +112,7 @@ int main(int argc, const char *argv[]) {
         else cout << "Pre-existing instantaneous dumpfiles directory deleted\n" << endl;
         //  Create the directory that will store instantaneous dump files & populate it:
         boost::filesystem::create_directory("dumpfiles");
-	cout << "Generating samples..." << endl;
+	    cout << "Generating samples..." << endl;
         generate_inst_dump_files(Particle1_Count, Particle2_Count, initDumpStep, dataSetCount);
     }
 
@@ -177,6 +178,7 @@ int main(int argc, const char *argv[]) {
             //  Particle mass, charge set to zero (does not matter for PCF)
             PARTICLE myparticle = PARTICLE(col1, Particle1_Diameter, 0, 0, VECTOR3D(col3, col4, col5), VECTOR3D(col3, col4, col5), bx, by, bz);
             //  If it's the initial data file, construct all particles and ascribe both position & initial position (same).
+            cout<<"\n DEBUG: col2-"<<col2;
             if (i == 0) {
                 if (col2 == 1) Particle1_List.push_back(myparticle);
                 if (col2 == 2) Particle2_List.push_back(myparticle);
