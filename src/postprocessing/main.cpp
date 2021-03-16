@@ -43,6 +43,9 @@ vector<double> CondensedCount_VsTime_List, BridgedCount_VsTime_List; // List of 
 */
 
 int main(int argc, const char *argv[]) {
+    // User defined Inputs
+    int stoichiometry;      // The fold higher count of Type 2 particles
+
     unsigned int Particle1_Count, Particle2_Count;
     long double Particle1_RealDensity, Particle2_RealDensity;
     long double D, d;
@@ -51,9 +54,7 @@ int main(int argc, const char *argv[]) {
     char computationFlag, typeFlag;
     //  Details on the datasets to be used (first dumpstep, number of directly subsequent steps)
     int initDumpStep, dataSetCount;
-    //  The fold higher count of Type 2 particles
-    int stoichiometry;
-
+    
     // Specify variables via command line (-X -x)
     options_description desc("Usage:\nrandom_mesh <options>");
     desc.add_options()
