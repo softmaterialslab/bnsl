@@ -71,10 +71,6 @@ int main(int argc, const char *argv[]) {
     store(parse_command_line(argc, argv, desc), vm);
     notify(vm);
 
-    // Adjusting particle1 count based on value of Stoichiometry
-    if(stoichiometry == 4)
-        Particle1_Count = 40;
-
     unitlength = D/1000000000;
     double Particle1_Diameter = 1;			// in reduced units of particle 1 diameter (not used)
 
@@ -115,7 +111,7 @@ int main(int argc, const char *argv[]) {
         else cout << "Pre-existing instantaneous dumpfiles directory deleted\n" << endl;
         //  Create the directory that will store instantaneous dump files & populate it:
         boost::filesystem::create_directory("dumpfiles");
-	cout << "Generating samples..." << endl;
+	    cout << "Generating samples..." << endl;
         generate_inst_dump_files(Particle1_Count, Particle2_Count, initDumpStep, dataSetCount);
     }
 
@@ -181,6 +177,7 @@ int main(int argc, const char *argv[]) {
             //  Particle mass, charge set to zero (does not matter for PCF)
             PARTICLE myparticle = PARTICLE(col1, Particle1_Diameter, 0, 0, VECTOR3D(col3, col4, col5), VECTOR3D(col3, col4, col5), bx, by, bz);
             //  If it's the initial data file, construct all particles and ascribe both position & initial position (same).
+            cout<<"\n DEBUG: col2-"<<col2;
             if (i == 0) {
                 if (col2 == 1) Particle1_List.push_back(myparticle);
                 if (col2 == 2) Particle2_List.push_back(myparticle);
