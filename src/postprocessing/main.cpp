@@ -64,8 +64,8 @@ int main(int argc, const char *argv[]) {
             ("stoichiometry,x", boost::program_options::value<int>(&stoichiometry)->default_value(1), "Relative ratio of two types (check)")
             ("whichComp,q", boost::program_options::value<char>(&computationFlag)->default_value('G'), "Specify computation: 'G' (RDF), 'T' (Time-series)")
             ("whichTypes,t", boost::program_options::value<char>(&typeFlag)->default_value('1'), "Specify type-type: 'A', '1', or '2'")
-            ("initDumpStep,i", boost::program_options::value<int>(&initDumpStep)->default_value(100000), "Specify the initial dump step (not timestep)")
-            ("dataSetCount,N", boost::program_options::value<int>(&dataSetCount)->default_value(100), "Specify the number of subsequent time samples");
+            ("initDumpStep,i", boost::program_options::value<int>(&initDumpStep)->default_value(0), "Specify the initial dump step (not timestep)")
+            ("dataSetCount,N", boost::program_options::value<int>(&dataSetCount)->default_value(2001), "Specify the number of subsequent time samples");
 
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
