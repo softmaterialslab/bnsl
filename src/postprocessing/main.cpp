@@ -75,8 +75,6 @@ int main(int argc, const char *argv[]) {
     if(stoichiometry == 4)
         Particle1_Count = 40;
 
-    cout<<"\n The Particle1 count is:"<<Particle1_Count;
-
     unitlength = D/1000000000;
     double Particle1_Diameter = 1;			// in reduced units of particle 1 diameter (not used)
 
