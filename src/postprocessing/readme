@@ -3,12 +3,8 @@ module load gsl && module load openmpi/3.0.1 && module load boost/1_67_0
 
 * for developing
 for small system:
-./postprocessor -E 50 -t '1' -i 0 -N 101
-for large system:
-./postprocessor -E 270 -t '1' -i 9000 -N 10001
-for deployed system:
-./postprocessor -E 50 -t '1' -x 1 -i 0 -N 2001
-./postprocessor -E 50 -t 'A' -x 1 -i 0 -N 2001
+./postprocessor -e 50 -x 1 -t 'A' -i 0 -N 101
+./postprocessor -e 40 -x 4 -t 'A' -i 0 -N 101
 
-* next round
-./postprocessor -E 50 -t 'A' -x 4 -i 0 -N 2001
+for large system (1:1):
+./postprocessor -e 270 -t 'A' -i 5000 -N 5001

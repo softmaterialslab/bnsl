@@ -33,7 +33,7 @@ long double unitlength; 	// Unit length (diameter of virus in meters);
 
 // Declaration of RDF functions:
 void compute_self_gr(int, vector<BINCONTAINER>&, unsigned int, vector<PARTICLE>&, long double, long double, long double, double, long double, ofstream&);
-void compute_gr_12(int, vector<BINCONTAINER> &, unsigned int, vector<PARTICLE> &, vector<PARTICLE> &, long double, long double, long double, double, long double, long double);
+void compute_cross_gr(int, vector<BINCONTAINER> &, unsigned int, vector<PARTICLE> &, vector<PARTICLE> &, long double, long double, long double, double, long double, long double);
 
 /* Later dev:
 void assess_Select_Particles(vector<PARTICLE>&, vector<PARTICLE>&, double, double, double);
@@ -64,7 +64,7 @@ int main(int argc, const char *argv[]) {
             ("VLP2diameter,d", value<long double>(&d)->default_value(56), "d in nm")
             ("stoichiometry,x", boost::program_options::value<int>(&stoichiometry)->default_value(1), "Relative ratio of two types (check)")
             ("whichComp,q", boost::program_options::value<char>(&computationFlag)->default_value('G'), "Specify computation: 'G' (RDF), 'T' (Time-series)")
-            ("whichTypes,t", boost::program_options::value<char>(&typeFlag)->default_value('1'), "Specify type-type: 'A', '1', or '2'")
+            ("whichTypes,t", boost::program_options::value<char>(&typeFlag)->default_value('A'), "Specify type-type: 'A', '1', or '2'")
             ("initDumpStep,i", boost::program_options::value<int>(&initDumpStep)->default_value(0), "Specify the initial dump step (not timestep)")
             ("dataSetCount,N", boost::program_options::value<int>(&dataSetCount)->default_value(2001), "Specify the number of subsequent time samples");
 
@@ -94,8 +94,8 @@ int main(int argc, const char *argv[]) {
     //  Defining the type 2 count and concentrations relative to the stoichiometry (w.r.t. type 1):
     Particle2_Count = stoichiometry * Particle1_Count;
     Particle2_RealDensity = stoichiometry * Particle1_RealDensity;
-    cout << "Computed number of Type 2 particles in the box: " << Particle2_Count << endl;
     long double Particle2_Density = Particle2_RealDensity * Na * 1000 * pow(unitlength, 3);
+    cout << "Computed number of Type 2 particles in the box: " << Particle2_Count << endl;
 
     cout << "\nPreliminary quantities provided & computed. Postprocessing begins.\n";
 
@@ -122,6 +122,7 @@ int main(int argc, const char *argv[]) {
 	 
     ofstream grStream11("outfiles/gr_EE_dr=0.005.out", ios::out);
     ofstream grStream22("outfiles/gr_KK_dr=0.005.out", ios::out);
+    //ofstream grStream12("outfiles/gr_EK_dr=0.005.out", ios::out);
 
     cout << "RDF g(r) computation initialized" << endl;
 
@@ -130,7 +131,7 @@ int main(int argc, const char *argv[]) {
         if (typeFlag == 'A') {
             compute_self_gr(0, gr11, 0, dummy_particle_list, bx, by, bz, bin_width, Particle1_RealDensity, grStream11);
             compute_self_gr(0, gr22, 0, dummy_particle_list, bx, by, bz, bin_width, Particle2_RealDensity, grStream22);
-            //compute_gr_12(0, gr12, 0, dummy_particle_list, dummy_particle_list, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
+            compute_cross_gr(0, gr12, 0, dummy_particle_list, dummy_particle_list, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
         }
 	else if (typeFlag == '1') {
             compute_self_gr(0, gr11, 0, dummy_particle_list, bx, by, bz, bin_width, Particle1_RealDensity, grStream11);
@@ -144,6 +145,8 @@ int main(int argc, const char *argv[]) {
 
     //  Import the data from each sample and use it
     //  Read data from a single specified file (within a for-loop iterating over all files).
+    //
+    cout << "Computing RDF g(r)..." << endl;
     
     for (int i = 0;  i < dataSetCount; i++) { // Read in the coordinates from instantaneous dump files, skipping header lines.
         vector<VECTOR3D> newParticle1_Positions, newParticle2_Positions; // New particle positions, temporary for updating.
@@ -163,7 +166,7 @@ int main(int argc, const char *argv[]) {
         
         else {
             if (fileNumber%100==0) 
-					cout << "Opened sample " << fileNumber << ".melt successfully." << endl;
+		cout << "Opened sample " << fileNumber << ".melt successfully." << endl;
             actualDataSetCount++;
         }
 
@@ -215,7 +218,7 @@ int main(int argc, const char *argv[]) {
             if (typeFlag == 'A') {
                 compute_self_gr(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
                 compute_self_gr(1, gr22, actualDataSetCount, Particle2_List, bx, by, bz, bin_width, Particle2_Density, grStream22);
-                //compute_gr_12(1, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
+                compute_cross_gr(1, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
             } 
 	    else if (typeFlag == '1') {
                 compute_self_gr(1, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
@@ -247,13 +250,16 @@ int main(int argc, const char *argv[]) {
         if (typeFlag == 'A') {
             compute_self_gr(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
             compute_self_gr(2, gr22, actualDataSetCount, Particle2_List, bx, by, bz, bin_width, Particle2_Density, grStream22);
-            //compute_gr_12(2, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
+            compute_cross_gr(2, gr12, actualDataSetCount, Particle1_List, Particle2_List, bx, by, bz, bin_width, Particle1_Density, Particle2_Density);
+    	    cout << "All RDFs complete." << endl;
         } 
 	else if (typeFlag == '1') {
             compute_self_gr(2, gr11, actualDataSetCount, Particle1_List, bx, by, bz, bin_width, Particle1_Density, grStream11);
+    	    cout << "RDF (self) for type 1 particles complete." << endl;
         } 
 	else if (typeFlag == '2') {
             compute_self_gr(2, gr22, actualDataSetCount, Particle2_List, bx, by, bz, bin_width, Particle2_Density, grStream22);
+    	    cout << "RDF (self) for type 1 particles complete." << endl;
         }
     }
 
