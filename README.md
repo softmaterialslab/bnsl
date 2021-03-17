@@ -9,6 +9,13 @@ What does this code do
 
 * Simulation results are tested and validated using SAXS and dynamic light scattering measurements of the VLP aggregates; experiments also guide the model design.
 
+Local install and testing (after loading the needed modules):
+* module load gsl && module load openmpi/3.0.1 && module load boost/1_67_0
+* from root (bnsl) directory: make local-install 
+* cd bin/
+* to test 1:1 systems: make run-preprocessor r=1 
+* to test 1:4 systems: make run-preprocessor r=4
+
 ### nanoHUB app page:
 * https://nanohub.org/tools/bnsl
 
