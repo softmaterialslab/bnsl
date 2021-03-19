@@ -1,11 +1,11 @@
 #!	/bin/bash
-#SBATCH--mail-user=nbrunk@iu.edu
-#SBATCH--nodes=1
+#SBATCH--mail-user=vjadhao@iu.edu
+#SBATCH--nodes=1	
 #SBATCH--ntasks-per-node=48
 #SBATCH--time=168:00:00
 #SBATCH--partition=general
 #SBATCH--mail-type=FAIL,BEGIN,END
-#SBATCH--job-name=Slow_Dia_E2-K2_1:1_370nM_100x
+#SBATCH--job-name=dialysis_threecomp
 #SBATCH--output=out.log
 #SBATCH--error=err.log
 
